@@ -18,7 +18,7 @@
     --radius-s:10px; --radius-m:16px; --radius-l:26px;
   }
   *{box-sizing:border-box;}
-  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Nunito Sans',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased;}
+  body{margin:0; overflow-x:clip; background:var(--bg); color:var(--ink); font-family:'Nunito Sans',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased;}
   h1,h2,h3{font-family:'Baloo 2',sans-serif; font-weight:700; margin:0; color:var(--ink);}
   button{font:inherit;}
   [hidden]{display:none !important;}
@@ -177,6 +177,15 @@
   .over{position:absolute; inset:0; z-index:45; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; background:rgba(27,27,58,.45); padding:16px; text-align:center; border-radius:var(--radius-l);}
   .over h2{color:#fff; font-size:30px; text-shadow:0 3px 0 rgba(0,0,0,.25);}
 
+  /* Мешканець вистрибує з-під щойно поставленої клавіші, каже щось і тікає (рух задає скрипт) */
+  .buddy{position:absolute; z-index:42; width:var(--bs); height:var(--bs); pointer-events:none;}
+  .buddy svg{display:block; width:100%; height:100%; overflow:visible;}
+  .buddy.rare svg{animation:glow .8s ease-in-out infinite alternate;}
+  @keyframes glow{from{filter:drop-shadow(0 0 2px #FFF3B0);} to{filter:drop-shadow(0 0 12px #FFD84D);}}
+  .say{position:absolute; left:50%; bottom:100%; margin-bottom:6px; transform:translateX(calc(-50% + var(--sh, 0px))); background:#fff; border:2px solid #1B1B3A; border-radius:12px; padding:1px 10px;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; line-height:1.35; white-space:nowrap; color:#1B1B3A; box-shadow:0 3px 0 rgba(27,27,58,.15); opacity:0;}
+  .say::after{content:''; position:absolute; left:50%; top:100%; margin-left:calc(-6px - var(--sh, 0px)); border:6px solid transparent; border-top-color:#1B1B3A;}
+
   /* ---------- Майстерня: скарбничка й теми клавіатури ---------- */
   .garage{display:grid; grid-template-columns:auto 1fr; gap:10px 20px; margin-top:20px; padding-top:16px; border-top:1.5px dashed var(--line); align-items:start;}
   @media (max-width:640px){ .garage{grid-template-columns:1fr;} .g-prev{justify-self:center;} }
@@ -203,6 +212,16 @@
   .unlock b{font-family:'Baloo 2',sans-serif; font-size:17px;}
   .unlock-list{display:flex; flex-wrap:wrap; justify-content:center; gap:10px 18px; margin-top:8px;}
   .unlock-item{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700;}
+
+  /* ---------- Мешканці клавіатури: кого вже бачив ---------- */
+  .buds{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .bud{display:flex; flex-direction:column; align-items:center; min-width:72px; border:1.5px solid var(--line); border-radius:var(--radius-m); padding:5px 6px 4px; background:var(--surface);
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:12.5px; line-height:1.2; cursor:pointer;}
+  .bud svg{width:42px; height:42px;}
+  .bud small{font-size:11px; color:var(--ink-soft);}
+  .bud.rare{border-color:#FFD84D; background:#FFFBEA;}
+  .bud.no{color:var(--ink-soft); background:var(--bg); border-style:dashed;}
+  .bud.no svg{filter:brightness(0) opacity(.15);}
 
   /* ---------- Наліпки ---------- */
   .stickers-box{margin-top:20px; padding-top:16px; border-top:1.5px dashed var(--line);}
@@ -293,7 +312,7 @@
       <span id="introKey"></span>
       <div>
         <h1>Клавіші на місця</h1>
-        <p>Службові клавіші розгубилися! <span class="hl">Перетягни кожну</span> з лотка на її місце на клавіатурі. Пробіл і Enter упізнаєш за формою, а решту — за тим, що стоїть поруч.</p>
+        <p>Службові клавіші розгубилися! <span class="hl">Перетягни кожну</span> з лотка на її місце на клавіатурі. Пробіл і Enter упізнаєш за формою, а решту — за тим, що стоїть поруч. А під клавішами, поки їх не було, хтось оселився…</p>
       </div>
     </div>
     <h3 class="levels-title">Обери рівень</h3>
@@ -302,6 +321,10 @@
       <div class="garage-head"><h3>Майстерня</h3><span class="bank" id="bank" title="Скарбничка: бали з усіх ігор"></span><span class="next-goal" id="nextGoal"></span></div>
       <div class="g-prev" id="gPrev"></div>
       <div class="g-row"><h4>Клавіатура</h4><div class="picks" id="themePicks"></div></div>
+    </div>
+    <div class="stickers-box">
+      <div class="garage-head"><h3>Мешканці клавіатури</h3><span class="next-goal" id="budCount"></span></div>
+      <div class="buds" id="buds"></div>
     </div>
     <div class="stickers-box">
       <div class="garage-head"><h3>Наліпки</h3><span class="next-goal" id="stickerCount"></span></div>
@@ -529,6 +552,8 @@ const STICKERS = [
   { id:'hard',   ico:'🔴', name:'Майстер клавіатури', how:'Отримати 3 зірки на рівні «Важко»',                                    test:r=>r.level === 'hard' && r.stars === 3 },
   { id:'stars3', ico:'🌟', name:'Три зірки',          how:'Отримати 3 зірки в 10 іграх на «Середньо» чи «Важко»',                  count:p=>p.stars3, need:10 },
   { id:'real',   ico:'👆', name:'Справжня клавіатура', how:'Під час гри натиснути на справжній клавіатурі 12 різних службових клавіш', count:p=>Object.keys(p.pressed).length, need:12 },
+  { id:'rare',   ico:'🦄', name:'Рідкісний гість',   how:'Побачити, як з-під клавіші вистрибує рідкісний мешканець, що світиться', test:r=>r.rare > 0 },
+  { id:'buds',   ico:'🐭', name:'Усі сусіди',         how:'Познайомитися з усіма звичайними мешканцями клавіатури',             count:p=>COMMON.filter(b=>p.met[b.id]).length, get need(){ return COMMON.length; } },
   { id:'keys',   ico:'🔑', name:'Клавішник',          how:'Поставити на місце 150 клавіш',                                         count:p=>p.placed, need:150 },
   { id:'games',  ico:'🏆', name:'Завсідник',          how:'Зібрати 25 клавіатур',                                                  count:p=>p.games, need:25 },
   { id:'bank',   ico:'💰', name:'Повна скарбничка',   how:'Зібрати в скарбничку 600 балів',                                        count:p=>p.total, need:600 },
@@ -539,8 +564,8 @@ const STORE_KEY = BOOST ? 'key-places-kids-boost-v1' : 'key-places-kids-v1';
 /* ================= Збереження ================= */
 // Гравці на цьому пристрої: { current, players:{ ім'я: профіль } }. У кожного свої рекорди, скарбничка, тема й наліпки.
 // Профіль: best — рекорди рівнів { score, stars, time }; total — скарбничка; games — зібрано клавіатур; placed — клавіш на місці за всі ігри;
-// stars3 — ігор з 3 зірками на «Середньо» чи «Важко»; pressed — які службові клавіші натискав на справжній клавіатурі; theme — обрана тема
-const newProfile = ()=>({ best:{}, total:0, games:0, placed:0, stars3:0, pressed:{}, stickers:{} });
+// stars3 — ігор з 3 зірками на «Середньо» чи «Важко»; met — скільки разів бачив кожного мешканця; pressed — які службові клавіші натискав на справжній клавіатурі; theme — обрана тема
+const newProfile = ()=>({ best:{}, total:0, games:0, placed:0, stars3:0, pressed:{}, met:{}, stickers:{} });
 let db = { current:null, players:{} };
 try{
   const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -601,6 +626,21 @@ function noise(dur, vol, delay = 0, freq = 2500){
     src.start(t);
   }catch(e){}
 }
+// Тон, що ковзає вгору чи вниз: стрибок, голоси мешканців
+function bloop(from, to, dur, vol, delay = 0, type = 'sine'){
+  if(!soundOn) return;
+  try{
+    const a = audio(), t = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(from, t);
+    o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + .02);
+  }catch(e){}
+}
 const fanfare = ()=>[523,659,784,1047].forEach((f,i)=>tone(f, .22, 'triangle', .08, i*.12));
 const popper = (delay = 0)=>{ noise(.06, .5, delay, 1200); tone(90, .12, 'sine', .1, delay); noise(.6, .12, delay + .05, 4500); };
 function bigFanfare(delay = 0){
@@ -619,6 +659,22 @@ const SFX = {
   appear: ()=>tone(880, .05, 'sine', .025),                                        // у лотку нова клавіша
   hint:   ()=>sparkle(),
   press:  ()=>noise(.03, .18, 0, 4200),                                            // натиснув справжню клавішу
+  jump:   ()=>bloop(260, 820, .16, .05),                                           // мешканець вистрибує
+};
+// Голоси мешканців (поле voice у BUDDIES); d — затримка, с
+const VOICE = {
+  squeak: d=>{ tone(1900, .06, 'sine', .04, d); tone(2300, .07, 'sine', .04, d + .08); },
+  chirp:  d=>{ bloop(1300, 2100, .08, .04, d); bloop(1300, 2200, .08, .04, d + .11); },
+  buzz:   d=>tone(190, .35, 'sawtooth', .025, d),
+  croak:  d=>{ tone(130, .1, 'square', .035, d); tone(115, .12, 'square', .035, d + .14); },
+  meow:   d=>{ bloop(520, 880, .14, .05, d, 'triangle'); bloop(880, 480, .25, .05, d + .14, 'triangle'); },
+  beep:   d=>{ tone(880, .08, 'square', .035, d); tone(1320, .1, 'square', .035, d + .11); },
+  boo:    d=>bloop(340, 170, .45, .06, d, 'triangle'),
+  slow:   d=>bloop(420, 260, .6, .04, d, 'triangle'),
+  sneeze: d=>{ tone(600, .08, 'triangle', .04, d); noise(.18, .3, d + .12, 2500); },
+  roar:   d=>{ noise(.4, .25, d, 350); tone(95, .35, 'sawtooth', .04, d); },
+  bloop:  d=>{ bloop(500, 250, .12, .05, d); bloop(600, 300, .12, .05, d + .14); },
+  magic:  d=>sparkle(d),
 };
 
 /* ================= Допоміжне ================= */
@@ -712,6 +768,131 @@ function keyboardHTML({ full = true, empty = [], mini = false } = {}){
   }).join('') + '</div></div>';
 }
 
+/* ================= Мешканці клавіатури ================= */
+// Під кожною порожньою клавішею хтось жив. Коли клавіша стає на місце, мешканець вистрибує з-під неї, щось каже й тікає.
+// say — що каже; voice — голос (VOICE); rare — рідкісний гість: світиться, з'являється з імовірністю RARE.
+// Малюнки — SVG 64×64, ноги внизу
+const RARE = .025;
+const SAY_ANY = ['Ой!', 'Моє місце!', 'Та йду вже, йду!', 'Хоп!', 'Звільняю!', 'Ого, клавіша!', 'Бувайте!'];   // іноді замість своєї фрази
+const BUDDIES = [
+  { id:'mouse',    name:'Мишка',       say:'Пі-пі! Я ж тут жила!',        voice:'squeak' },
+  { id:'bug',      name:'Жучок',       say:'Жжж! Переїжджаю!',            voice:'buzz' },
+  { id:'ladybug',  name:'Сонечко',     say:'Я лише заночувала!',          voice:'chirp' },
+  { id:'spider',   name:'Павучок',     say:'А моє павутиння?!',           voice:'squeak' },
+  { id:'snail',    name:'Равлик',      say:'Іду-у… повільно-о…',          voice:'slow' },
+  { id:'hamster',  name:'Хом\'ячок',   say:'Мої зернятка!',               voice:'squeak' },
+  { id:'chick',    name:'Курчатко',    say:'Ціп-ціп!',                    voice:'chirp' },
+  { id:'frog',     name:'Жабка',       say:'Ква-ква!',                    voice:'croak' },
+  { id:'cat',      name:'Котик',       say:'Мяу! Тут було так тепло…',    voice:'meow' },
+  { id:'bee',      name:'Бджілка',     say:'Дзззз!',                      voice:'buzz' },
+  { id:'robot',    name:'Робот',       say:'Біп-буп! Місце звільнено.',   voice:'beep' },
+  { id:'ghost',    name:'Привидик',    say:'Бу-у! Злякались?',            voice:'boo' },
+  { id:'dust',     name:'Пилинка',     say:'Апчхи!',                      voice:'sneeze' },
+  { id:'cookie',   name:'Печивко',     say:'Мене не з\'їли!',             voice:'squeak' },
+  { id:'monster',  name:'Монстрик',    say:'Гр-р… тобто привіт!',         voice:'roar' },
+  { id:'alien',    name:'Прибулець',   say:'Я з іншої клавіатури!',       voice:'beep' },
+  { id:'octopus',  name:'Восьминіжок', say:'Тут тісно для восьми ніг!',   voice:'bloop' },
+  { id:'penguin',  name:'Пінгвін',     say:'Ковзаю звідси!',              voice:'chirp' },
+  { id:'hedgehog', name:'Їжачок',      say:'Пф-пф-пф!',                   voice:'sneeze' },
+  { id:'owl',      name:'Совеня',      say:'Угу… я ж спало!',             voice:'boo' },
+  { id:'bunny',    name:'Зайчик',      say:'Стриб-скок!',                 voice:'chirp' },
+  { id:'dino',     name:'Динозаврик',  say:'Р-р-р! Я тут з давніх-давен!', voice:'roar',  rare:true },
+  { id:'unicorn',  name:'Єдиноріг',    say:'Чарівного дня!',              voice:'magic', rare:true },
+  { id:'dragon',   name:'Дракончик',   say:'Пф-ф! А де мій вогонь?',      voice:'roar',  rare:true },
+];
+const COMMON = BUDDIES.filter(b=>!b.rare), RARES = BUDDIES.filter(b=>b.rare);
+const BUDDY = Object.fromEntries(BUDDIES.map(b=>[b.id, b]));
+
+const O = '#1B1B3A', S = `stroke="${O}" stroke-width="2.5" stroke-linejoin="round"`;
+const eye = (x, y, r = 4.5)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${O}" stroke-width="2"/><circle cx="${x + .5}" cy="${y + .6}" r="${(r * .55).toFixed(1)}" fill="${O}"/><circle cx="${x + 1.3}" cy="${y - .5}" r="${(r * .2).toFixed(1)}" fill="#fff"/>`;
+const eyes = (x1, x2, y, r)=>eye(x1, y, r) + eye(x2, y, r);
+const smile = (x, y, w = 5, c = O)=>`<path d="M${x - w} ${y}q${w} ${w * .9} ${w * 2} 0" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`;
+const blush = (x1, x2, y)=>`<ellipse cx="${x1}" cy="${y}" rx="3.5" ry="2.2" fill="#FF8FB1" opacity=".8"/><ellipse cx="${x2}" cy="${y}" rx="3.5" ry="2.2" fill="#FF8FB1" opacity=".8"/>`;
+const line = (d, w = 2.5, c = O)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+// Пухнаста кулька: коло з горбиків
+const fluff = (cx, cy, rx, ry, n, r, fill)=>[...Array(n)].map((_, i)=>{ const a = i * 2 * Math.PI / n;
+  return `<circle cx="${(cx + rx * Math.cos(a)).toFixed(1)}" cy="${(cy + ry * Math.sin(a)).toFixed(1)}" r="${r}" fill="${fill}" ${S}/>`; }).join('') + `<ellipse cx="${cx}" cy="${cy}" rx="${rx + 1}" ry="${ry + 1}" fill="${fill}"/>`;
+// Голки їжачка: зубці по дузі
+const spikes = ()=>{ const p = []; for(let i = 0; i <= 16; i++){ const a = Math.PI * (1.05 + i * .9 / 16), r = i % 2 ? 17 : 25; p.push(`${(32 + r * Math.cos(a)).toFixed(1)} ${(48 + r * .9 * Math.sin(a)).toFixed(1)}`); } return `<path d="M${p.join('L')}L56 50L8 50z" fill="#8D5A3B" ${S}/>`; };
+const legs6 = `${line('M16 38l-8-3M15 46l-8 2M17 53l-6 5M48 38l8-3M49 46l8 2M47 53l6 5')}`;
+const DRAWB = {
+  mouse: `${line('M48 52q14 2 12-10', 3, '#9AA0B4')}<circle cx="17" cy="23" r="10" fill="#C9CDDA" ${S}/><circle cx="17" cy="23" r="5.5" fill="#FFB3C6"/>
+    <circle cx="47" cy="23" r="10" fill="#C9CDDA" ${S}/><circle cx="47" cy="23" r="5.5" fill="#FFB3C6"/>
+    <ellipse cx="32" cy="43" rx="20" ry="17" fill="#C9CDDA" ${S}/>${eyes(25, 39, 38, 4)}<circle cx="32" cy="45" r="3" fill="#FF6B8B" stroke="${O}" stroke-width="1.5"/>
+    ${line('M22 46h-9M22 49l-8 3M42 46h9M42 49l8 3', 1.5)}${smile(32, 49, 3)}`,
+  bug: `${legs6}${line('M27 17q-4-8-9-9M37 17q4-8 9-9')}<ellipse cx="32" cy="44" rx="17" ry="16" fill="#2E9E6B" ${S}/>${line('M32 30v29', 2)}
+    ${line('M21 39q2-5 6-6', 2.5, 'rgba(255,255,255,.5)')}<ellipse cx="32" cy="24" rx="11" ry="9" fill="#24324A" ${S}/>${eyes(28, 36, 23, 3.4)}${smile(32, 28, 2.5, '#fff')}`,
+  ladybug: `${legs6}<circle cx="32" cy="22" r="10" fill="${O}"/><circle cx="32" cy="42" r="18" fill="#E63946" ${S}/>${line('M32 25v35', 2)}
+    <circle cx="24" cy="36" r="3.5" fill="${O}"/><circle cx="40" cy="36" r="3.5" fill="${O}"/><circle cx="23" cy="48" r="3" fill="${O}"/><circle cx="41" cy="48" r="3" fill="${O}"/>
+    ${eyes(28, 36, 20, 3.3)}${smile(32, 25, 2.5, '#fff')}`,
+  spider: `${line('M32 0v24', 1.5, '#B9BCCB')}${line('M20 36q-10-8-16-2M19 41q-11-2-15 6M20 46q-8 4-10 12M24 50q-4 6-3 10M44 36q10-8 16-2M45 41q11-2 15 6M44 46q8 4 10 12M40 50q4 6 3 10')}
+    <circle cx="32" cy="40" r="15" fill="#5B4B8A" ${S}/>${eyes(27, 37, 37, 4.6)}${smile(32, 45, 3.5, '#fff')}`,
+  snail: `<path d="M6 58q0-6 8-6h32q12 0 14 6z" fill="#A8E6A1" ${S}/><circle cx="39" cy="38" r="15" fill="#F4A261" ${S}/>
+    ${line('M39 38m-2.5 0a2.5 2.5 0 1 1 5 0a6 6 0 1 1-11 0a10 10 0 1 1 20 2', 2.5, '#B5651D')}
+    <path d="M10 54V34q0-8 7-8q7 0 7 8v20z" fill="#A8E6A1" ${S}/>${line('M14 28l-3-10M20 28l3-10')}${eyes(11, 23, 16, 3.5)}${smile(17, 36, 3)}`,
+  hamster: `<circle cx="17" cy="25" r="6" fill="#E08E45" ${S}/><circle cx="47" cy="25" r="6" fill="#E08E45" ${S}/><ellipse cx="32" cy="43" rx="21" ry="17" fill="#F4A460" ${S}/>
+    <ellipse cx="32" cy="50" rx="12" ry="8" fill="#FFE4C4"/>${eyes(25, 39, 37, 4)}<ellipse cx="32" cy="43" rx="2.5" ry="1.8" fill="#FF6B8B"/>
+    <rect x="30.3" y="46.5" width="3.4" height="3.2" rx="1" fill="#fff" stroke="${O}" stroke-width="1.2"/>${line('M28.5 46q1.8 1.8 3.5 0q1.7 1.8 3.5 0', 1.8)}
+    <ellipse cx="18" cy="45" rx="5" ry="3.5" fill="#FF8FB1" opacity=".75"/><ellipse cx="46" cy="45" rx="5" ry="3.5" fill="#FF8FB1" opacity=".75"/>`,
+  chick: `${line('M26 56v4M38 56v4M23 60h6M35 60h6', 2.5, '#FF9F1C')}<path d="M29 21q-1-8 4-9q-2 4 1 9" fill="#FFD93D" ${S}/><circle cx="32" cy="39" r="19" fill="#FFD93D" ${S}/>
+    <path d="M14 40q-6 4-2 10q6-1 7-6" fill="#F6C21C" ${S}/><path d="M50 40q6 4 2 10q-6-1-7-6" fill="#F6C21C" ${S}/>${eyes(25, 39, 35, 4)}
+    <path d="M28 41l4 5 4-5z" fill="#FF9F1C" ${S}/>${blush(19, 45, 43)}`,
+  frog: `<circle cx="21" cy="25" r="9" fill="#6CC24A" ${S}/><circle cx="43" cy="25" r="9" fill="#6CC24A" ${S}/><ellipse cx="32" cy="44" rx="24" ry="15" fill="#6CC24A" ${S}/>
+    <ellipse cx="32" cy="51" rx="14" ry="6" fill="#B5E59A"/>${eyes(21, 43, 25, 5)}${smile(32, 41, 8)}${blush(15, 49, 43)}`,
+  cat: `<path d="M14 32l2-19 13 10z" fill="#F4A261" ${S}/><path d="M50 32l-2-19-13 10z" fill="#F4A261" ${S}/><path d="M17 26l1-8 6 5z" fill="#FFB3C6"/><path d="M47 26l-1-8-6 5z" fill="#FFB3C6"/>
+    <ellipse cx="32" cy="42" rx="21" ry="17" fill="#F4A261" ${S}/>${line('M32 26v5M27 27l1 4M37 27l-1 4', 2.2, '#C9733A')}${eyes(24, 40, 39, 4.2)}
+    <path d="M30 45h4l-2 2.5z" fill="#FF6B8B" stroke="${O}" stroke-width="1.2"/>${line('M32 47.5q-2 3-4 1M32 47.5q2 3 4 1', 1.8)}${line('M20 46h-9M20 49l-8 2M44 46h9M44 49l8 2', 1.4)}`,
+  bee: `<ellipse cx="22" cy="21" rx="8" ry="11" fill="#D6F0FF" ${S} transform="rotate(-25 22 21)"/><ellipse cx="42" cy="21" rx="8" ry="11" fill="#D6F0FF" ${S} transform="rotate(25 42 21)"/>
+    ${line('M28 27q-3-9-8-11M36 27q3-9 8-11')}<ellipse cx="32" cy="42" rx="19" ry="16" fill="#FFD93D" ${S}/>${line('M16 48h32M20 55h24', 4)}${eyes(26, 38, 37, 4)}${smile(32, 42, 3)}`,
+  robot: `${line('M32 14V7')}<circle cx="32" cy="5" r="3.2" fill="#FF5D5D" ${S}/><rect x="24" y="49" width="16" height="7" rx="2" fill="#90A4AE" ${S}/>${line('M27 56v4M37 56v4', 3)}
+    <rect x="13" y="14" width="38" height="34" rx="8" fill="#B0BEC5" ${S}/><circle cx="12" cy="31" r="3" fill="#8A9BA8" ${S}/><circle cx="52" cy="31" r="3" fill="#8A9BA8" ${S}/>
+    <rect x="18" y="20" width="12" height="11" rx="3" fill="${O}"/><rect x="34" y="20" width="12" height="11" rx="3" fill="${O}"/><circle cx="24" cy="25.5" r="3" fill="#4FD8FF"/><circle cx="40" cy="25.5" r="3" fill="#4FD8FF"/>
+    <rect x="22" y="36" width="20" height="6" rx="2" fill="#fff" ${S}/>${line('M27 36v6M32 36v6M37 36v6', 1.5)}`,
+  ghost: `<path d="M14 58V32a18 18 0 0 1 36 0v26l-6-5-6 5-6-5-6 5-6-5z" fill="#fff" ${S}/><ellipse cx="26" cy="32" rx="3" ry="4.5" fill="${O}"/><ellipse cx="38" cy="32" rx="3" ry="4.5" fill="${O}"/>
+    <ellipse cx="32" cy="42" rx="3" ry="4" fill="${O}"/>${blush(21, 43, 38)}`,
+  dust: `${fluff(32, 42, 17, 14, 12, 6, '#A7A9B5')}${eyes(26, 38, 39, 4)}<circle cx="32" cy="47" r="2.3" fill="${O}"/>`,
+  cookie: `<circle cx="32" cy="40" r="20" fill="#D9A066" ${S}/><circle cx="21" cy="31" r="2.5" fill="#5D3A1A"/><circle cx="43" cy="29" r="2.2" fill="#5D3A1A"/><circle cx="45" cy="47" r="2.5" fill="#5D3A1A"/>
+    <circle cx="19" cy="48" r="2.2" fill="#5D3A1A"/><circle cx="33" cy="54" r="2" fill="#5D3A1A"/>${eyes(26, 38, 38, 4)}${smile(32, 45, 4)}${blush(20, 44, 43)}`,
+  monster: `<path d="M18 26l-4-13 10 8z" fill="#FFF3B0" ${S}/><path d="M46 26l4-13-10 8z" fill="#FFF3B0" ${S}/><path d="M10 58q-2-31 22-35q24 4 22 35z" fill="#9B5DE5" ${S}/>
+    <circle cx="16" cy="48" r="2.5" fill="#B98AF0"/><circle cx="48" cy="44" r="3" fill="#B98AF0"/>${eye(32, 36, 8)}<path d="M22 47q10 8 20 0z" fill="${O}"/>
+    <path d="M25 47.5l2.5 3 2.5-3zM34 47.5l2.5 3 2.5-3z" fill="#fff"/>`,
+  alien: `${line('M24 22l-5-12M40 22l5-12')}<circle cx="19" cy="9" r="3.5" fill="#FFD84D" ${S}/><circle cx="45" cy="9" r="3.5" fill="#FFD84D" ${S}/>
+    <path d="M24 49h16l3 10H21z" fill="#7BD389" ${S}/><ellipse cx="32" cy="35" rx="19" ry="16" fill="#7BD389" ${S}/>
+    <ellipse cx="24" cy="34" rx="5" ry="7.5" fill="${O}" transform="rotate(-25 24 34)"/><ellipse cx="40" cy="34" rx="5" ry="7.5" fill="${O}" transform="rotate(25 40 34)"/>
+    <circle cx="25.5" cy="31" r="1.6" fill="#fff"/><circle cx="41.5" cy="31" r="1.6" fill="#fff"/>${smile(32, 43, 3)}`,
+  octopus: `${line('M15 46q-6 10 2 12M23 50q-2 9 4 9M32 51v8M41 50q2 9-4 9M49 46q6 10-2 12', 8)}${line('M15 46q-6 10 2 12M23 50q-2 9 4 9M32 51v8M41 50q2 9-4 9M49 46q6 10-2 12', 4, '#FF8FB1')}
+    <path d="M12 47q-2-31 20-31q22 0 20 31q-20 6-40 0z" fill="#FF8FB1" ${S}/><circle cx="22" cy="24" r="2.5" fill="#FFC2D4"/><circle cx="42" cy="26" r="2" fill="#FFC2D4"/>${eyes(25, 39, 35, 4.2)}${smile(32, 41, 3)}`,
+  penguin: `<ellipse cx="25" cy="59" rx="5" ry="2.5" fill="#FF9F1C" ${S}/><ellipse cx="39" cy="59" rx="5" ry="2.5" fill="#FF9F1C" ${S}/>
+    <path d="M15 36q-7 8-3 15" fill="none" stroke="#2B2D42" stroke-width="5" stroke-linecap="round"/><path d="M49 36q7 8 3 15" fill="none" stroke="#2B2D42" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="32" cy="38" rx="18" ry="21" fill="#2B2D42" ${S}/><ellipse cx="32" cy="45" rx="12" ry="13" fill="#fff"/><ellipse cx="32" cy="31" rx="12" ry="9" fill="#fff"/>
+    ${eyes(27, 37, 29, 3.6)}<path d="M29 34l3 4 3-4z" fill="#FF9F1C" ${S}/>${blush(23, 41, 36)}`,
+  hedgehog: `${spikes()}<ellipse cx="32" cy="49" rx="16" ry="11" fill="#F1D3B3" ${S}/>${eyes(26, 38, 46, 3.5)}<circle cx="32" cy="51" r="2.6" fill="${O}"/>${smile(32, 54, 2.5)}${blush(21, 43, 51)}
+    ${line('M24 60v-2M40 60v-2', 3, '#8D5A3B')}`,
+  owl: `<path d="M16 24l-3-13 10 8z" fill="#8D6E63" ${S}/><path d="M48 24l3-13-10 8z" fill="#8D6E63" ${S}/><ellipse cx="32" cy="40" rx="20" ry="20" fill="#8D6E63" ${S}/>
+    <ellipse cx="32" cy="48" rx="12" ry="11" fill="#D7CCC8"/>${line('M27 46l2 2 2-2M33 46l2 2 2-2M30 51l2 2 2-2', 1.5, '#A1887F')}
+    <circle cx="24" cy="33" r="8" fill="#FFF3E0" ${S}/><circle cx="40" cy="33" r="8" fill="#FFF3E0" ${S}/>${line('M20 34q4 3 8 0', 2.2)}${eye(40, 33, 4)}
+    <path d="M30 39l2 5 2-5z" fill="#FFB74D" ${S}/>${line('M26 60v-3M38 60v-3', 3, '#FFB74D')}`,
+  bunny: `<ellipse cx="24" cy="17" rx="5.5" ry="13" fill="#F5F5F5" ${S} transform="rotate(-8 24 17)"/><ellipse cx="24" cy="18" rx="2.5" ry="9" fill="#FFB3C6" transform="rotate(-8 24 18)"/>
+    <ellipse cx="40" cy="17" rx="5.5" ry="13" fill="#F5F5F5" ${S} transform="rotate(8 40 17)"/><ellipse cx="40" cy="18" rx="2.5" ry="9" fill="#FFB3C6" transform="rotate(8 40 18)"/>
+    <ellipse cx="32" cy="44" rx="19" ry="16" fill="#F5F5F5" ${S}/>${eyes(26, 38, 40, 3.8)}<ellipse cx="32" cy="46" rx="2.3" ry="1.7" fill="#FF6B8B"/>
+    ${line('M32 47.5v2M29 50q3 2 6 0', 1.6)}<rect x="30.3" y="50.3" width="3.4" height="3" rx="1" fill="#fff" stroke="${O}" stroke-width="1.2"/>${blush(21, 43, 47)}`,
+  dino: `<path d="M15 50q-13 2-13-7q6 4 15 0z" fill="#5CC264" ${S}/><path d="M17 37l3-7 4 5 3-7 4 5 3-6" fill="#FFD84D" ${S}/>
+    <rect x="20" y="53" width="7" height="7" rx="2" fill="#5CC264" ${S}/><rect x="33" y="53" width="7" height="7" rx="2" fill="#5CC264" ${S}/>
+    <ellipse cx="29" cy="46" rx="17" ry="12" fill="#5CC264" ${S}/><ellipse cx="29" cy="51" rx="10" ry="5" fill="#B5E59A"/>
+    <path d="M30 36q-4-20 12-22q16 0 16 12q0 9-10 9z" fill="#5CC264" ${S}/>${eye(41, 22, 4)}<circle cx="54" cy="25" r="1.3" fill="${O}"/>
+    ${line('M39 30q7 3 15-1', 2)}<path d="M44 31l1.5 2.5 1.5-2.5zM49 31l1.5 2.5 1.5-2.5z" fill="#fff"/>`,
+  unicorn: `<path d="M20 60q-5-20 6-30q-2-10 8-14q14-2 18 12q2 9-6 10l-6-2q-4 8 2 24z" fill="#fff" ${S}/><path d="M31 17l3-15 5 14z" fill="#FFD84D" ${S}/>
+    ${line('M33 7l3 1M33 11l4 1', 1.3, '#E0A800')}<circle cx="22" cy="22" r="5" fill="#FF8FB1" ${S}/><circle cx="18" cy="30" r="5" fill="#FFD84D" ${S}/>
+    <circle cx="17" cy="39" r="5" fill="#7FD3F7" ${S}/><circle cx="18" cy="48" r="5" fill="#B98AF0" ${S}/>${eye(39, 24, 3.8)}<circle cx="48" cy="31" r="1.4" fill="${O}"/>
+    ${smile(44, 34, 2.5)}<ellipse cx="38" cy="31" rx="3" ry="2" fill="#FF8FB1" opacity=".8"/>`,
+  dragon: `<path d="M20 38L4 22l3 15-6 3 15 6z" fill="#FF9AA2" ${S}/><path d="M44 38l16-16-3 15 6 3-15 6z" fill="#FF9AA2" ${S}/>
+    <ellipse cx="32" cy="47" rx="15" ry="12" fill="#E85D75" ${S}/>${line('M26 44h12M25 49h14M27 54h10', 2, '#FFC2C9')}
+    <path d="M24 20l-3-8 7 5zM40 20l3-8-7 5z" fill="#FFD84D" ${S}/><circle cx="32" cy="28" r="12" fill="#E85D75" ${S}/>${eyes(27, 37, 26, 3.8)}
+    <circle cx="30" cy="32.5" r="1" fill="${O}"/><circle cx="34" cy="32.5" r="1" fill="${O}"/>${smile(32, 34.5, 3)}
+    <circle cx="50" cy="12" r="3" fill="#D5D7E2"/><circle cx="55" cy="7" r="2.2" fill="#D5D7E2"/><circle cx="59" cy="3" r="1.5" fill="#D5D7E2"/>`,
+};
+const buddySVG = id=>`<svg viewBox="0 0 64 64" aria-hidden="true">${DRAWB[id]}</svg>`;
+
 /* ================= Теми ================= */
 const isOpen = (x, total = store.total)=>total >= x.at;
 const chosenTheme = ()=>{ const t = THEMES.find(t=>t.id === store.theme); return t && isOpen(t) ? t : THEMES[0]; };
@@ -746,6 +927,7 @@ function renderSetup(){
   renderGarage();
   const got = STICKERS.filter(st=>store.stickers[st.id]).length;
   $('stickerCount').textContent = `${got} з ${STICKERS.length}`;
+  renderBuddies();
   $('stickers').innerHTML = STICKERS.map(stickerHTML).join('');
 }
 const stickerHTML = st=>{
@@ -781,6 +963,22 @@ $('themePicks').addEventListener('click', e=>{
   save();
   SFX.place();
   renderGarage();
+});
+
+// Альбом мешканців: кого вже бачив — кольоровий, решта — тінь зі знаком питання
+function renderBuddies(){
+  const met = BUDDIES.filter(b=>store.met[b.id]).length;
+  $('budCount').textContent = `${met} з ${BUDDIES.length} · кожна клавіша на місці виганяє когось із-під себе`;
+  $('buds').innerHTML = BUDDIES.map(b=>{
+    const n = store.met[b.id] || 0;
+    return `<span class="bud${n ? '' : ' no'}${b.rare ? ' rare' : ''}" data-bud="${b.id}">${buddySVG(b.id)}<span>${n ? b.name : b.rare ? '✨ ?' : '?'}</span>${n ? `<small>×${n}</small>` : ''}</span>`;
+  }).join('');
+}
+$('buds').addEventListener('click', e=>{
+  const b = BUDDY[e.target.closest('[data-bud]')?.dataset.bud];
+  if(!b) return;
+  const n = store.met[b.id] || 0;
+  showToast(n ? `${b.name}: «${b.say}» Зустрічі: ${n}` : b.rare ? 'Рідкісний гість: вистрибує дуже рідко. Став клавіші — може, пощастить!' : 'Ще не зустрічався. Став клавіші на місця — і він вистрибне!');
 });
 
 /* ================= Гравці ================= */
@@ -902,7 +1100,7 @@ function start(levelId){
   let queue = shuffle([...L.keys]);
   if(levelId === 'easy') queue = [...shuffle(['space', 'enter']), ...queue.filter(id=>id !== 'space' && id !== 'enter')];
   G = { id:levelId, L, queue, tray:[], pending:0, total:L.keys.length, placed:0, firstTry:0, errors:0, hints:0,
-        confused:{}, pressed:{}, firstOf:{}, score:0, t:0, last:performance.now(), paused:false, phase:'play', timers:[] };
+        confused:{}, pressed:{}, firstOf:{}, bag:[], newMet:[], rare:0, score:0, t:0, last:performance.now(), paused:false, phase:'play', timers:[] };
   applyTheme($('game'));
   $('board').innerHTML = keyboardHTML({ full:L.full, empty:L.keys });
   $('trayKeys').innerHTML = '';
@@ -1055,6 +1253,7 @@ function place(item, slot){
     slot.innerHTML = capHTML(k);
     slot.classList.add('snap');
     setTimeout(()=>slot.classList.remove('snap'), 700);
+    jumpOut(slot, k);
   }, 190));
   // Підказка для цієї клавіші більше не потрібна (друге таке саме місце теж перестає блимати)
   slotEls().forEach(el=>{ if(fits(item.id, el.dataset.id)) el.classList.remove('hint'); });
@@ -1096,6 +1295,65 @@ function wrong(item, slot){
   }
 }
 
+// Хто вистрибне наступним: спершу ті, кого гравець ще не бачив, потім решта впереміш; зрідка — рідкісний гість
+function nextBuddy(){
+  if(Math.random() < RARE) return RARES[Math.floor(Math.random() * RARES.length)];
+  if(!G.bag.length){
+    const unseen = shuffle(COMMON.filter(b=>!store.met[b.id])), seen = shuffle(COMMON.filter(b=>store.met[b.id]));
+    G.bag = [...unseen, ...seen];
+    if(G.bag.length > 1 && G.bag[0] === G.lastBuddy) G.bag.push(G.bag.shift());   // той самий двічі поспіль — ні
+  }
+  return G.lastBuddy = G.bag.shift();
+}
+// З-під клавіші вистрибує мешканець: з'являється, озирається, каже щось і зістрибує вбік з клавіатури.
+// З-під Пробілу — ціла компанія з трьох
+function jumpOut(slot, k){
+  const n = k.kind === 'space' ? 3 : 1, g = G;
+  for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
+}
+function oneBuddy(slot, shiftU, talk){
+  const b = nextBuddy();
+  const first = !store.met[b.id];
+  store.met[b.id] = (store.met[b.id] || 0) + 1;   // зберігаємо одразу: знайомство лишається, навіть якщо вийти посеред гри
+  if(first) G.newMet.push(b.id);
+  if(b.rare) G.rare++;
+  save();
+  const play = $('play'), r = slot.getBoundingClientRect(), pr = play.getBoundingClientRect();
+  const size = Math.round(Math.min(78, Math.max(44, U * 1.35)));
+  const cx = r.left + r.width / 2 - pr.left + shiftU * U, cy = r.top + r.height * .7 - pr.top;
+  const dir = cx < pr.width / 2 ? -1 : 1;   // тікає до ближчого краю
+  const dx = dir * (110 + Math.random() * 90), up = 45 + Math.random() * 35;
+  const el = document.createElement('div');
+  el.className = 'buddy' + (b.rare ? ' rare' : '');
+  el.style.cssText = `--bs:${size}px; left:${cx - size / 2}px; top:${cy - size}px`;
+  const say = !b.rare && Math.random() < .35 ? SAY_ANY[Math.floor(Math.random() * SAY_ANY.length)] : b.say;
+  el.innerHTML = (talk ? `<div class="say">${esc(say)}</div>` : '') + buddySVG(b.id);
+  play.appendChild(el);
+  // Хмарка біля краю екрана зсувається всередину, а її хвостик і далі показує на мешканця
+  const sb = el.querySelector('.say');
+  if(sb){
+    const br = sb.getBoundingClientRect(), edge = document.documentElement.clientWidth - 8;
+    const sh = br.left < 8 ? 8 - br.left : br.right > edge ? edge - br.right : 0;
+    sb.style.setProperty('--sh', sh + 'px');
+  }
+  const T =(x, y, rot = 0, sx = 1, sy = 1)=>`translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
+  const anim = el.animate([
+    { transform:T(0, size * .5, 0, .2, .2), opacity:0 },
+    { transform:T(0, -size * .35, 0, 1.08, .92), opacity:1, offset:.12 },
+    { transform:T(0, 0), offset:.2 },
+    { transform:T(0, 0, -7 * dir), offset:.36 },
+    { transform:T(0, 0, 7 * dir), offset:.5 },
+    { transform:T(0, 2, 0, 1.1, .85), offset:.58 },
+    { transform:T(dx * .55, -up, 18 * dir), offset:.75 },
+    { transform:T(dx, 150, 55 * dir), opacity:0 },
+  ], { duration:2100, easing:'ease-in-out', fill:'forwards' });
+  anim.onfinish = ()=>el.remove();
+  el.querySelector('.say')?.animate([{ opacity:0 }, { opacity:1, offset:.12 }, { opacity:1, offset:.8 }, { opacity:0 }], { duration:1300, delay:200, fill:'forwards' });
+  SFX.jump();
+  VOICE[b.voice](.25);
+  if(b.rare) sparkle(.5);
+}
+
 function popAt(el, text, cls = ''){
   const r = el.getBoundingClientRect(), pr = $('play').getBoundingClientRect();
   const p = document.createElement('div');
@@ -1132,7 +1390,7 @@ function stopGame(){
   clearInterval(G.tick);
   G.timers.forEach(clearTimeout);
   G.phase = 'stopped';
-  document.querySelectorAll('.k.ghost').forEach(el=>el.remove());
+  document.querySelectorAll('.k.ghost, .buddy').forEach(el=>el.remove());
 }
 
 // Клавіатуру зібрано. Програти не можна: зірки показують, як вдалося.
@@ -1156,7 +1414,7 @@ function finish(){
   if(stars === 3 && g.id !== 'easy') store.stars3++;
   const opened = THEMES.filter(t=>t.at > before && isOpen(t));
   const arrowsClean = L.keys.includes('up') && ['up', 'down', 'left', 'right'].every(k=>g.firstOf[k]);
-  const run = { level:g.id, stars, errors:g.errors, time, par:L.par, hints:g.hints, arrowsClean };
+  const run = { level:g.id, stars, errors:g.errors, time, par:L.par, hints:g.hints, arrowsClean, rare:g.rare };
   const earned = STICKERS.filter(st=>!store.stickers[st.id] && (st.test ? st.test(run) : st.count(store) >= st.need));
   earned.forEach(st=>store.stickers[st.id] = 1);
   save();
@@ -1190,9 +1448,11 @@ function finish(){
   ].filter(Boolean).map(([k, v])=>`<li><span>${k}</span><b>${v}</b></li>`).join('');
   $('resUnlock').innerHTML = opened.length ? `<div class="unlock"><b>🔓 Відкрито!</b><div class="unlock-list">${opened.map(t=>
     `<span class="unlock-item">${themePrev(t)}Клавіатура: ${t.ico} ${t.name}</span>`).join('')}</div></div>` : '';
+  $('resUnlock').innerHTML += g.newMet.length ? `<div class="unlock"><b>🐾 ${g.newMet.length > 1 ? 'Нові знайомі' : 'Новий знайомий'}!</b><div class="unlock-list">${g.newMet.map(id=>
+    `<span class="bud${BUDDY[id].rare ? ' rare' : ''}">${buddySVG(id)}<span>${BUDDY[id].name}</span></span>`).join('')}</div></div>` : '';
   $('resUnlock').innerHTML += earned.length ? `<div class="unlock"><b>🎉 ${earned.length > 1 ? 'Нові наліпки' : 'Нова наліпка'}!</b><div class="unlock-list">${earned.map(stickerHTML).join('')}</div></div>` : '';
   $('resUnlock').querySelectorAll('.sticker').forEach(s=>s.classList.add('new'));
-  if(opened.length || earned.length) sparkle(1.6);
+  if(opened.length || earned.length || g.newMet.length) sparkle(1.6);
   G.timers.push(setTimeout(()=>{
     if(G !== g) return;
     renderSetup();

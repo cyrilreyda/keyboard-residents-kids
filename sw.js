@@ -1,7 +1,7 @@
 // Офлайн-режим гри. Онлайн сторінки завжди беруться з мережі (і оновлюють збережену копію),
 // без інтернету — зі збереженої копії. Параметри адреси (?boost, ?zvuk=…) на копію не впливають.
 // Після зміни списку FILES збільшити номер у CACHE, щоб браузери забрали нову копію.
-const CACHE = 'key-places-kids-v1';
+const CACHE = 'key-places-kids-v2';
 const FILES = ['./', './index.html', './guide/', './guide/index.html', './fonts/fonts.css',
                './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 const TIMEOUT = 5000;   // повільна мережа в класі — після 5 с беремо збережену копію
