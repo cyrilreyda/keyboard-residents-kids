@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Клавіші на місця · Інформатика в 131-й</title>
+<link href="fonts/fonts.css" rel="stylesheet">   <!-- локальні шрифти: гра працює без інтернету -->
+<link rel="manifest" href="manifest.webmanifest">   <!-- гру можна встановити як програму -->
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#6C5CE7">
+<script src="/lock.js"></script>   <!-- замок «лише на уроці» з каталогу; у грі з архіву його немає, і вона відкривається як завжди -->
+<style>
+  :root{
+    --bg:#F6F5FB; --ink:#1B1B3A; --ink-soft:#514F72; --surface:#FFFFFF; --line:#E4E1F5;
+    --purple:#6C5CE7; --purple-dark:#5340c9; --teal:#16A3A0; --teal-dark:#0E7C7A; --coral:#FF6B4A;
+    --yellow:#FFC93C; --pink:#FF5D9E; --blue:#2D9CDB;
+    --radius-s:10px; --radius-m:16px; --radius-l:26px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Nunito Sans',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Baloo 2',sans-serif; font-weight:700; margin:0; color:var(--ink);}
+  button{font:inherit;}
+  [hidden]{display:none !important;}
+  .container{max-width:1120px; margin:0 auto; padding:0 16px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:10; background:rgba(246,245,251,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);}
+  .topbar-inner{max-width:1120px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:12px;}
+  .back-link{font-family:'Baloo 2',sans-serif; font-weight:600; font-size:14px; color:var(--teal-dark); text-decoration:none; white-space:nowrap;}
+  .back-link:hover{text-decoration:underline;}
+  .game-title{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .top-btn{margin-left:auto; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; border:1.5px solid var(--teal); background:var(--surface); color:var(--teal-dark); border-radius:999px; padding:4px 14px; cursor:pointer; white-space:nowrap; text-decoration:none;}
+  .top-btn:hover{background:#E3F7F6;}
+  /* Повний екран: стрілки від центру — розгорнути, до центру — згорнути */
+  .fs-btn{margin-left:0; align-self:stretch; display:flex; align-items:center; padding:0 9px;}
+  .fs-btn svg{width:20px; height:20px;}
+  .fs-btn[hidden], .fs-btn .fs-off, .fs-btn.full .fs-on{display:none;}
+  .fs-btn.full .fs-off{display:block;}
+  @media (max-width:640px){ .game-title{display:none;} .top-btn .long{display:none;} .top-btn{padding:4px 11px;} .fs-btn{padding:0 8px;} }
+
+  main{padding:16px 0 40px;}
+
+  /* ---------- Кнопки й панелі ---------- */
+  .panel{background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius-l); padding:20px; margin-top:16px;}
+  .btn{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; border:none; border-radius:999px; padding:10px 20px; cursor:pointer;}
+  .btn-primary{background:var(--teal); color:#fff;}
+  .btn-primary:hover{background:var(--teal-dark);}
+  .btn-big{font-size:19px; padding:12px 30px; box-shadow:0 4px 0 var(--teal-dark);}
+  .btn-big:active{transform:translateY(2px); box-shadow:0 2px 0 var(--teal-dark);}
+  .btn-ghost{background:var(--bg); color:var(--ink); border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);}
+  .toast{position:fixed; left:50%; bottom:24px; z-index:60; transform:translate(-50%, 20px); opacity:0; pointer-events:none;
+    background:var(--ink); color:#fff; font-family:'Baloo 2',sans-serif; font-weight:600; font-size:15px; padding:8px 18px; border-radius:999px;
+    box-shadow:0 8px 20px rgba(27,27,58,.25); transition:opacity .2s ease, transform .2s ease; max-width:calc(100vw - 32px); text-align:center;}
+  .toast.show{opacity:1; transform:translate(-50%, 0);}
+  .confetti{position:fixed; top:-20px; width:10px; height:16px; border-radius:3px; z-index:30; pointer-events:none; animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+  @keyframes beat{50%{transform:scale(1.4);}}
+  /* Довідка для вчителя: які налаштування з адреси діють */
+  .teacher-note{margin-top:10px; text-align:center; font-size:12.5px; color:var(--ink-soft); opacity:.8;}
+  .teacher-note:empty{display:none;}
+
+  /* ---------- Вибір рівня ---------- */
+  .intro{display:flex; align-items:center; gap:22px;}
+  .intro .k{flex-shrink:0;}
+  .intro h1{font-size:28px; line-height:1.15;}
+  .intro p{margin:4px 0 0; font-size:17px;}
+  .intro .hl{color:var(--purple); font-weight:800;}
+  @media (max-width:520px){ .intro{flex-direction:column; text-align:center; gap:8px;} }
+  .levels-title{font-size:17px; margin:18px 0 10px;}
+  .levels{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;}
+  @media (max-width:640px){ .levels{grid-template-columns:1fr;} }
+  .level{display:flex; flex-direction:column; align-items:center; gap:2px; border:1.5px solid var(--line); background:var(--surface); border-radius:var(--radius-m); padding:14px 10px 12px; cursor:pointer; text-align:center; transition:all .15s ease;}
+  .level:hover{border-color:var(--teal); transform:translateY(-2px); box-shadow:0 6px 16px rgba(27,27,58,.08);}
+  .level .lv-ico{font-size:30px; line-height:1;}
+  .level .lv-name{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:21px; line-height:1.2;}
+  .level .lv-info{font-size:13px; font-weight:600; color:var(--ink-soft);}
+  .level .lv-best{margin-top:6px; font-size:13px; font-weight:700; color:var(--ink-soft); background:var(--bg); border-radius:999px; padding:1px 12px;}
+  .level .lv-best.got{background:#FFF4D6; color:#8A6200;}
+
+  /* ---------- Клавіатура ----------
+     Усі розміри — у «клавішах»: --u — ширина звичайної клавіші в пікселях, --x/--y/--w/--h — місце й розмір клавіші.
+     Кольори задає тема клавіатури (THEMES) змінними --case, --cap, --cap2 тощо на #game і на прев'ю */
+  .kb{position:relative; display:inline-block; padding:calc(var(--u) * .3); border-radius:calc(var(--u) * .38); background:var(--case);
+    box-shadow:0 calc(var(--u) * .14) 0 var(--case-d), inset 0 2px 0 rgba(255,255,255,.35); user-select:none; -webkit-user-select:none;}
+  .kb-in{position:relative; width:calc(var(--u) * var(--kw)); height:calc(var(--u) * var(--kh));}
+  .k{position:absolute; left:calc(var(--u) * var(--x)); top:calc(var(--u) * var(--y)); width:calc(var(--u) * var(--w)); height:calc(var(--u) * var(--h));
+    font-family:'Baloo 2',sans-serif; font-weight:700; color:var(--k-ink); line-height:1;}
+  .k svg.cap{position:absolute; inset:0; width:100%; height:100%; overflow:visible;}
+  .k .side{fill:var(--side);}
+  .k .face{fill:var(--cap); transition:fill .12s ease;}
+  .k.svc .side{fill:var(--side2);}
+  .k.svc .face{fill:var(--cap2);}
+  .k .hole{fill:var(--hole); stroke:var(--hole-line); stroke-width:3; stroke-dasharray:10 7; opacity:.9; transition:fill .12s ease;}
+  /* Написи на клавішах. Службові — посередині, у Enter — у верхній частині; літери — латинська вгорі ліворуч, українська внизу праворуч */
+  .lb{position:absolute; left:9%; right:9%; top:7%; bottom:22%; display:flex; align-items:center; justify-content:center; gap:.2em; text-align:center;
+    font-size:calc(var(--u) * var(--f, .3)); white-space:pre-line; pointer-events:none;}
+  .lb.up{bottom:auto; height:calc(var(--u) * .75);}
+  .lb svg{width:1.05em; height:1.05em; flex-shrink:0;}
+  .lat{position:absolute; left:16%; top:9%; font-size:calc(var(--u) * .22); font-weight:600; opacity:.75; pointer-events:none;}
+  .cyr{position:absolute; right:17%; bottom:26%; font-size:calc(var(--u) * .36); font-weight:800; color:var(--cyr); pointer-events:none;}
+  .cyr.dig{right:auto; left:16%; color:var(--k-ink);}
+  /* Вогник Caps Lock: світиться, коли справжній Caps Lock увімкнено */
+  .led{position:absolute; right:12%; top:13%; width:calc(var(--u) * .11); height:calc(var(--u) * .11); border-radius:50%; background:rgba(0,0,0,.18);}
+  .kb.caps .led{background:#3DDC84; box-shadow:0 0 6px #3DDC84;}
+  /* Порожнє місце: над ним несуть клавішу — світлішає; підказка — блимає жовтим; не та клавіша — червоне */
+  .k.slot.over .hole{fill:var(--hole-over, rgba(255,255,255,.55)); stroke-dasharray:none; stroke-width:5;}
+  .k.slot.hint .hole{animation:hint-blink .7s ease-in-out infinite alternate;}
+  @keyframes hint-blink{from{fill:var(--hole);} to{fill:#FFD84D;}}
+  .k.bad{animation:shake .4s ease;}
+  .k.bad .hole{fill:#FF6B4A;}
+  @keyframes shake{20%{transform:translateX(-6%);} 45%{transform:translateX(5%);} 70%{transform:translateX(-3%);}}
+  .k.snap{animation:snap .35s ease;}
+  @keyframes snap{40%{transform:scale(1.08);}}
+  .k.snap .face{animation:flash .7s ease;}
+  @keyframes flash{0%, 30%{fill:#C8F7D6;}}
+  /* Натиснули справжню клавішу — така сама на екрані запалюється й опускається */
+  .k.lit{transform:translateY(calc(var(--u) * .05));}
+  .k.lit .face{fill:var(--lit);}
+  /* Клавіатуру зібрано: хвиля світла зліва направо */
+  .k.wave .face{animation:wave .7s ease var(--d, 0s) both;}
+  @keyframes wave{40%{fill:var(--lit);}}
+  /* Тема «Підсвітка»: написи переливаються всіма кольорами */
+  .rgb .lb, .rgb .cyr, .rgb .lat{text-shadow:0 0 6px currentColor; animation:hue 4s linear infinite; animation-delay:calc(var(--x, 0) * -.2s);}
+  @keyframes hue{to{filter:hue-rotate(360deg);}}
+  /* Мала клавіатура в «Майстерні»: без написів */
+  .kb.mini .lb, .kb.mini .lat, .kb.mini .cyr, .kb.mini .led{display:none;}
+
+  /* ---------- Гра ---------- */
+  .hud{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; margin:0 auto 10px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1.5px solid var(--line); border-radius:999px; padding:3px 14px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:19px; line-height:1.4; white-space:nowrap;}
+  .chip svg{width:24px; height:24px;}
+  .chip.score span{display:inline-block; min-width:1.4em; transition:transform .2s ease;}
+  .chip.score span.bump{transform:scale(1.35);}
+  .chip.time.over-par{color:#C2410C; border-color:#FFC4B5;}
+  .round-btn{width:38px; height:38px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:16px; font-weight:800; line-height:1; cursor:pointer; padding:0;}
+  .round-btn:hover{border-color:var(--teal); color:var(--teal-dark);}
+  .round-btn.exit:hover{border-color:var(--coral); color:var(--coral);}
+
+  .play{position:relative; display:flex; gap:14px; align-items:stretch; justify-content:center;}
+  /* Лоток збоку: звідси беруть клавіші. Нові з'являються, коли попередні вже на місцях */
+  .tray{width:210px; flex-shrink:0; background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius-l); padding:12px; display:flex; flex-direction:column; gap:10px;}
+  .tray-title{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; text-align:center; color:var(--purple); line-height:1.25;}
+  .tray-keys{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; min-height:120px;}
+  .tray .k{position:relative; left:auto; top:auto; flex-shrink:0; cursor:grab; touch-action:none; animation:pop-in .35s ease both;}
+  .tray .k:hover{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(27,27,58,.2));}
+  .tray .k.lifted{visibility:hidden;}
+  .tray .k.nudge{animation:shake .45s ease;}
+  @keyframes pop-in{from{opacity:0; transform:translateY(-14px) scale(.85);}}
+  .tray-left{font-size:13px; font-weight:700; color:var(--ink-soft); text-align:center;}
+  .board{flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; padding:4px 0 10px;}
+  /* Клавіша, яку несуть: велика, з тінню, іде за вказівником */
+  .k.ghost{position:fixed; z-index:50; pointer-events:none; filter:drop-shadow(0 12px 10px rgba(27,27,58,.35));}
+  .k.ghost.fly{transition:left .2s ease, top .2s ease, opacity .2s ease;}
+  .k.ghost.back{opacity:.2;}
+  body.dragging, body.dragging *{cursor:grabbing !important;}
+  @media (max-width:760px){
+    .play{flex-direction:column;}
+    .tray{width:auto;}
+    .tray-keys{flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; min-height:60px;}
+  }
+  /* Під клавіатурою — що робить щойно поставлена клавіша */
+  .info{max-width:760px; margin:10px auto 0; min-height:52px; background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius-m);
+    padding:8px 16px; font-size:16px; line-height:1.4; display:flex; align-items:center; gap:10px;}
+  .info b{font-family:'Baloo 2',sans-serif; font-size:17px;}
+  .info.good{border-color:#9BE3B4; background:#F2FCF5;}
+  .info.bad{border-color:#FFC4B5; background:#FFF6F3;}
+  .info .ico{font-size:22px;}
+
+  .pop{position:absolute; z-index:40; transform:translate(-50%, -100%); pointer-events:none; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:22px; line-height:1;
+    color:#16803C; text-shadow:0 2px 0 #fff, 0 0 6px #fff; animation:popup .9s ease-out forwards; white-space:nowrap;}
+  .pop.no{color:#C2410C;}
+  @keyframes popup{to{transform:translate(-50%, -160%); opacity:0;}}
+
+  /* Затемнення поверх гри: пауза */
+  .over{position:absolute; inset:0; z-index:45; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; background:rgba(27,27,58,.45); padding:16px; text-align:center; border-radius:var(--radius-l);}
+  .over h2{color:#fff; font-size:30px; text-shadow:0 3px 0 rgba(0,0,0,.25);}
+
+  /* ---------- Майстерня: скарбничка й теми клавіатури ---------- */
+  .garage{display:grid; grid-template-columns:auto 1fr; gap:10px 20px; margin-top:20px; padding-top:16px; border-top:1.5px dashed var(--line); align-items:start;}
+  @media (max-width:640px){ .garage{grid-template-columns:1fr;} .g-prev{justify-self:center;} }
+  .garage-head{grid-column:1 / -1; display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap;}
+  .garage-head h3{font-size:17px;}
+  .bank{display:inline-flex; align-items:center; gap:5px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:16px; color:#8A6200; background:#FFF4D6; border-radius:999px; padding:0 12px;}
+  .bank svg{width:20px; height:20px;}
+  .next-goal{font-size:13.5px; font-weight:600; color:var(--ink-soft);}
+  .g-prev{padding-top:4px;}
+  .g-row h4{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; color:var(--ink-soft); margin:0 0 6px;}
+  .picks{display:flex; flex-wrap:wrap; gap:8px;}
+  .pick{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:84px; border:1.5px solid var(--line); background:var(--surface); border-radius:var(--radius-m); padding:7px 8px 5px; cursor:pointer;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; line-height:1.2; color:var(--ink); transition:all .15s ease;}
+  .pick:hover:not(:disabled){border-color:var(--teal); transform:translateY(-2px);}
+  .pick.on{background:#E3F7F6; border-color:var(--teal); box-shadow:0 0 0 2px var(--teal);}
+  .pick:disabled{cursor:not-allowed; color:var(--ink-soft);}
+  .pick:disabled .thumb{filter:grayscale(1) opacity(.4);}
+  .pick small{font-size:11.5px; color:#8A6200;}
+  .theme-prev{display:flex; gap:3px; padding:5px; border-radius:7px; width:62px;}
+  .theme-prev i{flex:1; height:18px; border-radius:4px; box-shadow:0 2px 0 rgba(0,0,0,.25);}
+  .theme-prev i:nth-child(2){flex:2;}
+  /* Що відкрилось за гру */
+  .unlock{border:2px dashed var(--yellow); border-radius:var(--radius-m); padding:10px 12px 12px; margin:12px auto 0; max-width:420px;}
+  .unlock b{font-family:'Baloo 2',sans-serif; font-size:17px;}
+  .unlock-list{display:flex; flex-wrap:wrap; justify-content:center; gap:10px 18px; margin-top:8px;}
+  .unlock-item{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700;}
+
+  /* ---------- Наліпки ---------- */
+  .stickers-box{margin-top:20px; padding-top:16px; border-top:1.5px dashed var(--line);}
+  .stickers{display:grid; grid-template-columns:repeat(auto-fill, minmax(86px, 1fr)); gap:8px; margin-top:10px;}
+  .sticker{display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; cursor:pointer; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:12.5px; line-height:1.15;}
+  .sticker .st-ico{width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:27px;
+    background:radial-gradient(circle at 35% 30%, #FFFFFF, #FFF1C2); border:3px solid #FFC93C; box-shadow:0 3px 0 #E0A800;}
+  .sticker.no{color:var(--ink-soft); font-weight:600;}
+  .sticker.no .st-ico{background:var(--bg); border:2px dashed var(--line); box-shadow:none;}
+  .sticker.no .st-ico span{filter:grayscale(1); opacity:.3;}
+  .sticker.new .st-ico{animation:beat .6s ease 2;}
+  /* Наліпка, яку збирають кілька ігор: знизу вгору заповнюється кольором на стільки, скільки вже зібрано */
+  .sticker .st-ico{position:relative; overflow:hidden;}
+  .st-part{position:absolute; left:0; right:0; bottom:0; height:var(--fill); overflow:hidden; background:#FFE08A; border-top:2px solid #E0A800;}
+  .st-part span{position:absolute; left:0; right:0; bottom:0; height:48px; display:flex; align-items:center; justify-content:center;}
+  .sticker.no .st-ico .st-part, .sticker.no .st-ico .st-part span{filter:none; opacity:1;}
+  .sticker.no.full .st-ico{border:3px solid #FFC93C;}
+  .sticker.full .st-part{border-top:none;}
+  .sticker small{font-size:11.5px; font-weight:700; color:#8A6200;}
+
+  /* ---------- Гравці ---------- */
+  .player-btn{margin-left:auto; display:inline-flex; align-items:center; gap:6px; max-width:200px; overflow:hidden;}
+  .player-btn + .top-btn{margin-left:0;}
+  .player-btn .long{overflow:hidden; text-overflow:ellipsis;}
+  .pb-ico{display:inline-flex; flex-shrink:0; width:24px; height:24px; position:relative;}
+  .pb-ico .k{--u:24px;}
+  .overlay{position:fixed; inset:0; z-index:20; background:rgba(27,27,58,.45); display:none; align-items:center; justify-content:center; padding:16px;}
+  .overlay.show{display:flex;}
+  .win{background:var(--surface); border-radius:var(--radius-l); padding:26px 24px; max-width:470px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(27,27,58,.25); max-height:90vh; overflow:auto;}
+  .win h2{font-size:26px; margin-bottom:2px;}
+  .win .sub{color:var(--ink-soft); font-size:14.5px; margin:0;}
+  .win .big{font-size:56px; line-height:1; margin-bottom:6px;}
+  .win.prof{position:relative;}
+  .win.prof h2{font-size:22px; padding:0 36px;}
+  .prof-close{position:absolute; top:14px; right:14px; z-index:1; width:34px; height:34px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:16px; font-weight:700; line-height:1; cursor:pointer;}
+  .prof-close:hover{border-color:var(--coral); color:var(--coral);}
+  .name-form{display:flex; gap:8px; margin:14px 0 6px;}
+  .name-form input{flex:1; min-width:0; font:inherit; font-size:16px; padding:9px 14px; border:1.5px solid var(--line); border-radius:999px; outline:none; color:var(--ink);}
+  .name-form input:focus{border-color:var(--teal);}
+  .known{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 4px;}
+  .chip-btn{font-family:'Baloo 2',sans-serif; font-weight:600; font-size:14px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 14px; cursor:pointer;}
+  .chip-btn:hover{border-color:var(--teal);}
+  .note-small{font-size:13px; color:var(--ink-soft); margin:6px 0 0;}
+  .note-small:empty{display:none;}
+  .btn-small{font-size:13.5px; padding:7px 14px;}
+  .players{display:flex; flex-direction:column; gap:6px; margin-top:12px; text-align:left;}
+  .pl-row{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:var(--radius-m); padding:6px 8px 6px 12px; background:var(--surface);}
+  .pl-row.me{border-color:var(--teal); background:#F2FBF7;}
+  .pl-name{flex:1; min-width:0; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pl-name small{display:block; font-family:'Nunito Sans',sans-serif; font-weight:600; font-size:12px; color:var(--ink-soft);}
+  .pl-you{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; color:var(--teal-dark); padding:0 6px;}
+  .pl-del{width:30px; height:30px; border-radius:50%; border:none; background:none; color:var(--ink-soft); font-size:15px; cursor:pointer;}
+  .pl-del:hover{background:#FFEFE9; color:#C2410C;}
+
+  /* ---------- Результат ---------- */
+  .result{text-align:center; max-width:560px; margin-left:auto; margin-right:auto;}
+  .res-emoji{font-size:54px; line-height:1;}
+  .result h2{font-size:30px; margin:4px 0 2px;}
+  .res-stars{font-size:44px; line-height:1.1; letter-spacing:4px; color:var(--yellow); text-shadow:0 2px 0 #E0A800;}
+  .res-stars i{font-style:normal; color:var(--line); text-shadow:none;}
+  .gain{display:inline-flex; align-items:center; gap:6px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:24px; color:#8A6200; background:#FFF4D6; border-radius:999px; padding:2px 18px; margin:8px 0 4px;}
+  .gain svg{width:28px; height:28px;}
+  .res-record{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; color:#16803C;}
+  .res-list{list-style:none; padding:0; margin:12px auto 18px; display:grid; gap:4px; font-size:15px; max-width:420px; text-align:left;}
+  .res-list li{display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); padding:3px 2px;}
+  .res-list b{font-family:'Baloo 2',sans-serif; font-size:17px; text-align:right;}
+  .res-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; margin:12px 0 6px;}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-inner">
+  <a class="back-link" href="https://cyrilreyda.github.io/" data-ui>← Всі ігри</a>
+  <span class="game-title">Клавіші на місця</span>
+  <button class="top-btn player-btn" id="playerBtn" type="button" title="Гравці на цьому комп'ютері" data-ui><span class="pb-ico" id="playerIco"></span><span class="long" id="playerName">Гравець</span></button>
+  <a class="top-btn" href="guide/index.html" title="Інструкція для учнів і вчителів" data-ui>❓<span class="long"> Як грати</span></a>
+  <button class="top-btn fs-btn" id="fsBtn" type="button" title="На весь екран (F11)" aria-label="На весь екран (F11)" data-ui hidden>
+    <svg class="fs-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10.5L20 4M14 4h6v6M10.5 13.5L4 20M4 14v6h6"/></svg>
+    <svg class="fs-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4l-6 6M14 5v5h5M4 20l6-6M5 14h5v5"/></svg>
+  </button>
+</div></div>
+
+<main class="container">
+
+  <!-- Вибір рівня -->
+  <section class="panel" id="setup">
+    <div class="intro">
+      <span id="introKey"></span>
+      <div>
+        <h1>Клавіші на місця</h1>
+        <p>Службові клавіші розгубилися! <span class="hl">Перетягни кожну</span> з лотка на її місце на клавіатурі. Пробіл і Enter упізнаєш за формою, а решту — за тим, що стоїть поруч.</p>
+      </div>
+    </div>
+    <h3 class="levels-title">Обери рівень</h3>
+    <div class="levels" id="levels"></div>
+    <div class="garage" id="garage">
+      <div class="garage-head"><h3>Майстерня</h3><span class="bank" id="bank" title="Скарбничка: бали з усіх ігор"></span><span class="next-goal" id="nextGoal"></span></div>
+      <div class="g-prev" id="gPrev"></div>
+      <div class="g-row"><h4>Клавіатура</h4><div class="picks" id="themePicks"></div></div>
+    </div>
+    <div class="stickers-box">
+      <div class="garage-head"><h3>Наліпки</h3><span class="next-goal" id="stickerCount"></span></div>
+      <div class="stickers" id="stickers"></div>
+    </div>
+    <div class="teacher-note"></div>
+  </section>
+
+  <!-- Гра -->
+  <section id="game" hidden>
+    <div class="hud">
+      <span class="chip score" title="Бали"><svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-star"/></svg><span id="score">0</span></span>
+      <span class="chip" title="Скільки клавіш уже на місцях">⌨️ <span id="progress">0 з 9</span></span>
+      <span class="chip time" id="timeChip" title="Скільки часу минуло">⏱ <span id="time">0:00</span></span>
+      <button class="round-btn" id="pauseBtn" title="Пауза" data-ui>⏸</button>
+      <button class="round-btn exit" id="exitBtn" title="Вийти до вибору рівня" data-ui>✕</button>
+    </div>
+    <div class="play" id="play">
+      <aside class="tray" id="tray">
+        <div class="tray-title">Перетягни на місце</div>
+        <div class="tray-keys" id="trayKeys"></div>
+        <div class="tray-left" id="trayLeft"></div>
+      </aside>
+      <div class="board" id="board"></div>
+      <div class="over" id="pauseOver" hidden>
+        <h2>Пауза</h2>
+        <button class="btn btn-primary btn-big" id="resumeBtn" data-ui>▶ Грати далі</button>
+      </div>
+    </div>
+    <div class="info" id="info" aria-live="polite"></div>
+    <div class="teacher-note"></div>
+  </section>
+
+  <!-- Результат -->
+  <section class="panel result" id="result" hidden>
+    <div class="res-emoji" id="resEmoji">🎉</div>
+    <h2 id="resTitle">Клавіатуру зібрано!</h2>
+    <div class="res-stars" id="resStars"></div>
+    <div class="gain" id="resScore"></div>
+    <div class="res-record" id="resRecord"></div>
+    <div class="res-btns">
+      <button class="btn btn-primary btn-big" id="againBtn">🔁 Ще раз</button>
+      <button class="btn btn-ghost" id="levelsBtn">Обрати рівень</button>
+    </div>
+    <div id="resUnlock"></div>
+    <ul class="res-list" id="resList"></ul>
+    <div class="teacher-note"></div>
+  </section>
+</main>
+
+<!-- Вибір гравця -->
+<div class="overlay" id="nameOverlay">
+  <div class="win" role="dialog" aria-labelledby="nameTitle">
+    <div class="big">👋</div>
+    <h2 id="nameTitle">Привіт! Як тебе звати?</h2>
+    <p class="sub">Під цим ім'ям на цьому комп'ютері збережуться твої бали, клавіатури й наліпки.</p>
+    <div class="known" id="knownPlayers"></div>
+    <form class="name-form" id="nameForm">
+      <input id="nameInput" maxlength="24" placeholder="Ім'я та прізвище" autocomplete="off">
+      <button class="btn btn-primary" type="submit">Почати</button>
+    </form>
+    <p class="note-small" id="nameErr"></p>
+    <button class="btn btn-ghost btn-small" id="nameCancel" type="button" hidden>Скасувати</button>
+  </div>
+</div>
+
+<!-- Гравці на цьому комп'ютері -->
+<div class="overlay" id="profileOverlay">
+  <div class="win prof" role="dialog" aria-labelledby="profTitle">
+    <button class="prof-close" id="profClose" type="button" title="Закрити вікно" aria-label="Закрити вікно">✕</button>
+    <h2 id="profTitle">Гравці на цьому комп'ютері</h2>
+    <div class="players" id="playerList"></div>
+    <form class="name-form" id="addForm">
+      <input id="addInput" maxlength="24" placeholder="Ім'я нового гравця" autocomplete="off">
+      <button class="btn btn-primary" type="submit">＋ Додати</button>
+    </form>
+    <p class="note-small" id="addErr"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-star" viewBox="0 0 48 48">
+      <path d="M24 3.5l6.1 12.6 13.9 1.9-10.1 9.7 2.5 13.8L24 34.9l-12.4 6.6 2.5-13.8L4 18l13.9-1.9z" fill="#FFC93C" stroke="#E0A800" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="19.5" cy="23" r="2" fill="#8A6200"/><circle cx="28.5" cy="23" r="2" fill="#8A6200"/>
+      <path d="M20.5 28.5q3.5 3 7 0" fill="none" stroke="#8A6200" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+/* ================= Налаштування ================= */
+// ?boost — складніші рівні для 5–7 класів: на клавішах лише значки (⇧, ↵, ⟵), як на багатьох справжніх клавіатурах,
+// у лотку більше клавіш водночас, коротша норма часу, менше дозволених помилок, підказка пізніше.
+// У встановленій грі (PWA) адреси не видно, тож вчитель перемикає режим ще й Ctrl+Alt+B — це запам'ятовується на пристрої.
+// ?boost в адресі діє лише на цей запуск: один комп'ютер може відкривати гру різним класам різними посиланнями
+const BOOST_KEY = 'key-places-kids-boost';
+let boostSaved = false;
+try{ boostSaved = localStorage.getItem(BOOST_KEY) === 'on'; }catch(e){}
+const BOOST = boostSaved || new URLSearchParams(location.search).has('boost');
+
+// Які клавіші ставить учень на кожному рівні (решта службових уже на місцях)
+const KEYS_EASY = ['space', 'enter', 'bksp', 'shiftL', 'shiftR', 'tab', 'caps', 'ctrlL', 'ctrlR'];
+const KEYS_MID  = [...KEYS_EASY, 'altL', 'altR', 'winL', 'esc', 'up', 'down', 'left', 'right'];
+const KEYS_HARD = [...KEYS_MID, 'winR', 'menu', 'del', 'ins', 'home', 'end', 'pgup', 'pgdn', 'prt'];
+// full — уся клавіатура з F1–F12 і блоком стрілок; інакше лише основна частина.
+// tray — скільки клавіш водночас у лотку; par — норма часу, с (друга зірка); err — скільки помилок можна (третя зірка);
+// hint — після скількох помилок з однією клавішею її місце починає блимати
+const LEVELS = BOOST ? {
+  easy: { name:'Легко',    ico:'🟢', info:'основні клавіші',     keys:KEYS_EASY, full:false, tray:3, par:40,  err:1, hint:3 },
+  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Win, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:4, par:75,  err:2, hint:3 },
+  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:4, par:120, err:3, hint:3 },
+} : {
+  easy: { name:'Легко',    ico:'🟢', info:'основні клавіші',     keys:KEYS_EASY, full:false, tray:2, par:60,  err:2, hint:2 },
+  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Win, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:3, par:110, err:3, hint:2 },
+  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:3, par:170, err:4, hint:2 },
+};
+const PTS_FIRST = 2, PTS_LATER = 1;          // за клавішу з першої спроби й не з першої
+const BONUS_CLEAN = 5, BONUS_PAR = 3;        // без жодної помилки; вклався в норму часу
+
+// Службові клавіші: name — як називається; label — напис на клавіші; sym — напис у режимі ?boost; what — що робить
+const WIN_ICO = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 3.6l7-1v7.1H1zM9 2.4l10-1.4v8.7H9zM1 10.5h7v7.1l-7-1zM9 10.5h10V19L9 17.6z" fill="currentColor"/></svg>';
+const MENU_ICO = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="2" width="13" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 7h7M6.5 10h7M6.5 13h7" stroke="currentColor" stroke-width="1.8"/></svg>';
+const SERVICE = {
+  esc:   { name:'Esc',            label:'Esc',          what:'скасовує дію, закриває меню чи віконце' },
+  tab:   { name:'Tab',            label:'Tab ⇥',        sym:'⇥',  what:'робить відступ у тексті й переходить до наступного поля' },
+  caps:  { name:'Caps Lock',      label:'Caps\nLock',   what:'вмикає ВЕЛИКІ літери, доки не натиснеш її ще раз. Тоді світиться вогник', led:true },
+  shift: { name:'Shift',          label:'⇧ Shift',      sym:'⇧',  what:'поки тримаєш її, друкуються великі літери й верхні знаки на клавішах' },
+  ctrl:  { name:'Ctrl',           label:'Ctrl',         what:'працює разом з іншими: Ctrl + C — копіювати, Ctrl + V — вставити, Ctrl + Z — скасувати' },
+  win:   { name:'Windows',        label:WIN_ICO, icon:true, what:'відкриває меню «Пуск»' },
+  alt:   { name:'Alt',            label:'Alt',          what:'теж для скорочень: Alt + Tab перемикає вікна, Alt + Shift — мову' },
+  space: { name:'Пробіл',         label:'',             what:'ставить пробіл між словами. Найдовша клавіша' },
+  menu:  { name:'Меню',           label:MENU_ICO, icon:true, what:'відкриває меню, як права кнопка миші' },
+  enter: { name:'Enter',          label:'Enter ↵',      sym:'↵',  what:'починає новий рядок або підтверджує: «Так, виконати!»' },
+  bksp:  { name:'Backspace',      label:'⟵ Backspace',  sym:'⟵',  what:'стирає знак ліворуч від курсора' },
+  del:   { name:'Delete',         label:'Delete',       sym:'Del', what:'стирає знак праворуч від курсора, а у Провіднику — вибраний файл' },
+  ins:   { name:'Insert',         label:'Insert',       sym:'Ins', what:'перемикає: нові літери вставляються між старими чи пишуться замість них' },
+  home:  { name:'Home',           label:'Home',         what:'переносить курсор на початок рядка' },
+  end:   { name:'End',            label:'End',          what:'переносить курсор у кінець рядка' },
+  pgup:  { name:'Page Up',        label:'Page\nUp',     sym:'PgUp', what:'гортає на сторінку вгору' },
+  pgdn:  { name:'Page Down',      label:'Page\nDown',   sym:'PgDn', what:'гортає на сторінку вниз' },
+  prt:   { name:'Print Screen',   label:'PrtSc',        what:'робить знімок екрана' },
+  up:    { name:'Стрілка вгору',  label:'↑',            what:'переносить курсор на рядок вище' },
+  down:  { name:'Стрілка вниз',   label:'↓',            what:'переносить курсор на рядок нижче' },
+  left:  { name:'Стрілка вліво',  label:'←',            what:'переносить курсор на один знак ліворуч' },
+  right: { name:'Стрілка вправо', label:'→',            what:'переносить курсор на один знак праворуч' },
+};
+
+/* ================= Розкладка клавіатури ================= */
+// Місце й розмір клавіші — у клавішах: x, y, w, h. Ряд F1–F12 — y = 0, основні ряди — y = 1,5…5,5, праворуч — блок стрілок.
+// kind — яка це службова клавіша (SERVICE); code — KeyboardEvent.code, щоб клавіша на екрані світилась від справжньої.
+// Enter — великий, у два ряди, у формі гачка (shape:'enter'). Літери: lat — латинська, cyr — українська
+const KB = [];
+const add = (id, x, y, w, o = {})=>KB.push({ id, x, y, w, h:1, ...o });
+add('esc', 0, 0, 1, { kind:'esc', code:'Escape' });
+for(let i = 0; i < 12; i++) add('f' + (i + 1), 2 + i + Math.floor(i / 4) * .5, 0, 1, { txt:'F' + (i + 1), code:'F' + (i + 1) });
+add('prt', 15.5, 0, 1, { kind:'prt', code:'PrintScreen' });
+add('scr', 16.5, 0, 1, { txt:'Scroll\nLock', code:'ScrollLock' });
+add('pause', 17.5, 0, 1, { txt:'Pause', code:'Pause' });
+// Ряд цифр
+add('bq', 0, 1.5, 1, { top:'~', main:'`', code:'Backquote' });
+[['1','!'],['2','@'],['3','#'],['4','$'],['5','%'],['6','^'],['7','&'],['8','*'],['9','('],['0',')']]
+  .forEach(([d, s], i)=>add('d' + d, 1 + i, 1.5, 1, { main:d, top:s, code:'Digit' + d }));
+add('minus', 11, 1.5, 1, { main:'-', top:'_', code:'Minus' });
+add('equal', 12, 1.5, 1, { main:'=', top:'+', code:'Equal' });
+add('bksp', 13, 1.5, 2, { kind:'bksp', code:'Backspace' });
+add('ins', 15.5, 1.5, 1, { kind:'ins', code:'Insert' });
+add('home', 16.5, 1.5, 1, { kind:'home', code:'Home' });
+add('pgup', 17.5, 1.5, 1, { kind:'pgup', code:'PageUp' });
+// Літери: [латинська, українська, code]
+const letters = (y, x0, list)=>list.forEach(([lat, cyr, code], i)=>add('l' + code, x0 + i, y, 1, { lat, cyr, code }));
+add('tab', 0, 2.5, 1.5, { kind:'tab', code:'Tab' });
+letters(2.5, 1.5, [['Q','Й','KeyQ'],['W','Ц','KeyW'],['E','У','KeyE'],['R','К','KeyR'],['T','Е','KeyT'],['Y','Н','KeyY'],['U','Г','KeyU'],
+  ['I','Ш','KeyI'],['O','Щ','KeyO'],['P','З','KeyP'],['[','Х','BracketLeft'],[']','Ї','BracketRight']]);
+add('enter', 13.5, 2.5, 1.5, { h:2, shape:'enter', kind:'enter', code:'Enter' });
+add('del', 15.5, 2.5, 1, { kind:'del', code:'Delete' });
+add('end', 16.5, 2.5, 1, { kind:'end', code:'End' });
+add('pgdn', 17.5, 2.5, 1, { kind:'pgdn', code:'PageDown' });
+add('caps', 0, 3.5, 1.75, { kind:'caps', code:'CapsLock' });
+letters(3.5, 1.75, [['A','Ф','KeyA'],['S','І','KeyS'],['D','В','KeyD'],['F','А','KeyF'],['G','П','KeyG'],['H','Р','KeyH'],['J','О','KeyJ'],
+  ['K','Л','KeyK'],['L','Д','KeyL'],[';','Ж','Semicolon'],["'",'Є','Quote'],['\\','Ґ','Backslash']]);
+add('shiftL', 0, 4.5, 2.25, { kind:'shift', code:'ShiftLeft' });
+letters(4.5, 2.25, [['Z','Я','KeyZ'],['X','Ч','KeyX'],['C','С','KeyC'],['V','М','KeyV'],['B','И','KeyB'],['N','Т','KeyN'],['M','Ь','KeyM'],
+  [',','Б','Comma'],['.','Ю','Period'],['/','.','Slash']]);
+add('shiftR', 12.25, 4.5, 2.75, { kind:'shift', code:'ShiftRight' });
+add('up', 16.5, 4.5, 1, { kind:'up', code:'ArrowUp' });
+add('ctrlL', 0, 5.5, 1.25, { kind:'ctrl', code:'ControlLeft' });
+add('winL', 1.25, 5.5, 1.25, { kind:'win', code:'MetaLeft' });
+add('altL', 2.5, 5.5, 1.25, { kind:'alt', code:'AltLeft' });
+add('space', 3.75, 5.5, 6.25, { kind:'space', code:'Space' });
+add('altR', 10, 5.5, 1.25, { kind:'alt', code:'AltRight' });
+add('winR', 11.25, 5.5, 1.25, { kind:'win', code:'MetaRight' });
+add('menu', 12.5, 5.5, 1.25, { kind:'menu', code:'ContextMenu' });
+add('ctrlR', 13.75, 5.5, 1.25, { kind:'ctrl', code:'ControlRight' });
+add('left', 15.5, 5.5, 1, { kind:'left', code:'ArrowLeft' });
+add('down', 16.5, 5.5, 1, { kind:'down', code:'ArrowDown' });
+add('right', 17.5, 5.5, 1, { kind:'right', code:'ArrowRight' });
+const KEY = Object.fromEntries(KB.map(k=>[k.id, k]));
+const isMain = k=>k.x < 15 && k.y >= 1.5;   // основна частина без F1–F12 і блоку стрілок
+
+// Теми клавіатури: відкриваються за бали в скарбничці (at). case — корпус, cap — клавіша-літера, cap2 — службова,
+// side — бічна грань клавіші, ink — написи, cyr — українські літери, hole — порожнє місце, lit — клавіша світиться
+const THEMES = [
+  { id:'classic', name:'Класична', ico:'⬜', at:0,   case:'#C7CAD9', caseD:'#A6AAC0', cap:'#FFFFFF', side:'#C3C6D6', cap2:'#E6E7F1', side2:'#B1B5C9', ink:'#1B1B3A', cyr:'#D2352B', hole:'#8C90A9', holeLine:'#FFFFFF', lit:'#FFE27A' },
+  { id:'dark',    name:'Чорна',    ico:'⬛', at:15,  case:'#26272F', caseD:'#121318', cap:'#3B3D4B', side:'#1C1D25', cap2:'#30323F', side2:'#17181F', ink:'#F4F4FA', cyr:'#FFB45E', hole:'#0D0E13', holeLine:'#8A8DA6', lit:'#16A3A0' },
+  { id:'mint',    name:'М\'ятна',  ico:'🌱', at:35,  case:'#8FD6C3', caseD:'#68B6A1', cap:'#F4FFFB', side:'#A6DACA', cap2:'#D0F2E7', side2:'#88C6B3', ink:'#124B43', cyr:'#E0457B', hole:'#4C9C87', holeLine:'#FFFFFF', lit:'#FFE27A' },
+  { id:'pink',    name:'Рожева',   ico:'🌸', at:60,  case:'#FFB3D1', caseD:'#EE8AB2', cap:'#FFF5FA', side:'#F4BBD2', cap2:'#FFD6E8', side2:'#E699BA', ink:'#6B1E45', cyr:'#6C5CE7', hole:'#D46C98', holeLine:'#FFFFFF', lit:'#FFE27A' },
+  { id:'retro',   name:'Ретро',    ico:'📟', at:90,  case:'#D9D0B5', caseD:'#B9AE8C', cap:'#F2ECDA', side:'#CFC5A6', cap2:'#B0A68C', side2:'#8C8369', ink:'#3F3726', cyr:'#B5432A', hole:'#998F74', holeLine:'#FFFFFF', lit:'#FFB347' },
+  { id:'ocean',   name:'Морська',  ico:'🌊', at:130, case:'#1F5F8B', caseD:'#123E5D', cap:'#E6F6FF', side:'#9CCBE6', cap2:'#B5E3F7', side2:'#7DB4D2', ink:'#0B3A57', cyr:'#FF6B4A', hole:'#0D3450', holeLine:'#7FD3F7', lit:'#FFE27A' },
+  { id:'space',   name:'Космос',   ico:'🚀', at:180, case:'#2B1B5A', caseD:'#170D37', cap:'#3F2D7C', side:'#1D1245', cap2:'#33236A', side2:'#160C38', ink:'#F4EEFF', cyr:'#FFD84D', hole:'#0E0725', holeLine:'#9C8BFF', lit:'#FF5D9E' },
+  { id:'rgb',     name:'Підсвітка', ico:'🌈', at:240, case:'#131319', caseD:'#000000', cap:'#22232D', side:'#0B0B10', cap2:'#1B1C25', side2:'#08080C', ink:'#FF4FD8', cyr:'#4FD8FF', hole:'#050507', holeLine:'#6A6A88', lit:'#FFFFFF', rgb:true },
+  { id:'gold',    name:'Золота',   ico:'👑', at:320, case:'#B8860B', caseD:'#8A6200', cap:'#FFF4C7', side:'#E0B94A', cap2:'#FFE08A', side2:'#C99A1E', ink:'#5A3E00', cyr:'#B3261E', hole:'#7A5600', holeLine:'#FFE9A8', lit:'#FFFFFF' },
+];
+
+// Наліпки за досягнення. Одні — за одну гру: test(r), r — підсумок гри. Інші збираються за кілька ігор:
+// count(p) — скільки вже є в профілі гравця після гри, need — скільки треба
+const STICKERS = [
+  { id:'first',  ico:'⌨️', name:'Перша клавіатура',  how:'Зібрати першу клавіатуру',                                             test:r=>true },
+  { id:'clean',  ico:'🎯', name:'Без жодної помилки', how:'Зібрати клавіатуру, жодного разу не поклавши клавішу не туди',          test:r=>r.errors === 0 },
+  { id:'fast',   ico:'⚡', name:'Швидкі руки',        how:'На «Середньо» чи «Важко» зібрати клавіатуру вдвічі швидше за норму часу', test:r=>r.level !== 'easy' && r.time <= r.par / 2 },
+  { id:'arrows', ico:'🧭', name:'Компас',             how:'Поставити всі чотири стрілки з першої спроби',                          test:r=>r.arrowsClean },
+  { id:'nohint', ico:'🕵️', name:'Без підказок',      how:'Зібрати «Важко» так, щоб жодне місце не почало блимати',                 test:r=>r.level === 'hard' && r.hints === 0 },
+  { id:'hard',   ico:'🔴', name:'Майстер клавіатури', how:'Отримати 3 зірки на рівні «Важко»',                                    test:r=>r.level === 'hard' && r.stars === 3 },
+  { id:'stars3', ico:'🌟', name:'Три зірки',          how:'Отримати 3 зірки в 10 іграх на «Середньо» чи «Важко»',                  count:p=>p.stars3, need:10 },
+  { id:'real',   ico:'👆', name:'Справжня клавіатура', how:'Під час гри натиснути на справжній клавіатурі 12 різних службових клавіш', count:p=>Object.keys(p.pressed).length, need:12 },
+  { id:'keys',   ico:'🔑', name:'Клавішник',          how:'Поставити на місце 150 клавіш',                                         count:p=>p.placed, need:150 },
+  { id:'games',  ico:'🏆', name:'Завсідник',          how:'Зібрати 25 клавіатур',                                                  count:p=>p.games, need:25 },
+  { id:'bank',   ico:'💰', name:'Повна скарбничка',   how:'Зібрати в скарбничку 600 балів',                                        count:p=>p.total, need:600 },
+];
+const stickerProgress = st=>st.count && !store.stickers[st.id] ? Math.min(st.count(store) || 0, st.need) : 0;
+const STORE_KEY = BOOST ? 'key-places-kids-boost-v1' : 'key-places-kids-v1';
+
+/* ================= Збереження ================= */
+// Гравці на цьому пристрої: { current, players:{ ім'я: профіль } }. У кожного свої рекорди, скарбничка, тема й наліпки.
+// Профіль: best — рекорди рівнів { score, stars, time }; total — скарбничка; games — зібрано клавіатур; placed — клавіш на місці за всі ігри;
+// stars3 — ігор з 3 зірками на «Середньо» чи «Важко»; pressed — які службові клавіші натискав на справжній клавіатурі; theme — обрана тема
+const newProfile = ()=>({ best:{}, total:0, games:0, placed:0, stars3:0, pressed:{}, stickers:{} });
+let db = { current:null, players:{} };
+try{
+  const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if(s && s.players) db = s;
+}catch(e){}
+let player = null;
+let store = newProfile();
+function save(){ if(player) try{ localStorage.setItem(STORE_KEY, JSON.stringify(db)); }catch(e){} }
+function loadPlayer(name){
+  store = db.players[name] = Object.assign(newProfile(), db.players[name]);
+  player = db.current = name;
+  save();
+}
+
+/* ================= Звук ================= */
+// Звук увімкнено за замовчуванням. Учням перемикача не показуємо: вчитель вимикає звук адресою ?zvuk=tykho
+// (вмикає назад ?zvuk=klas) або Ctrl+Alt+Z — як у «Клавіатурних перегонах». Режим запам'ятовується на цьому пристрої
+const SOUND_KEY = 'key-places-kids-sound';
+let soundOn = true;
+try{ soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; }catch(e){}
+function setSound(on){
+  soundOn = on;
+  try{ localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); }catch(e){}
+  showToast(on ? '🔊 Звук увімкнено' : '🔇 Без звуку');
+  updateTeacherNote();
+  if(on) fanfare();
+}
+let actx = null;
+function audio(){
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if(actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone(freq, dur = .12, type = 'sine', vol = .07, delay = 0){
+  if(!soundOn) return;
+  try{
+    const a = audio(), t = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + .02);
+  }catch(e){}
+}
+// Шум — клацання клавіші
+function noise(dur, vol, delay = 0, freq = 2500){
+  if(!soundOn) return;
+  try{
+    const a = audio(), t = a.currentTime + delay, n = Math.ceil(a.sampleRate * dur);
+    const buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = .7;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(f).connect(g).connect(a.destination);
+    src.start(t);
+  }catch(e){}
+}
+const fanfare = ()=>[523,659,784,1047].forEach((f,i)=>tone(f, .22, 'triangle', .08, i*.12));
+const popper = (delay = 0)=>{ noise(.06, .5, delay, 1200); tone(90, .12, 'sine', .1, delay); noise(.6, .12, delay + .05, 4500); };
+function bigFanfare(delay = 0){
+  let t = delay;
+  for(const [f, d] of [[392,.12],[523,.12],[659,.12],[784,.3],[659,.14],[784,.7]]){
+    tone(f, d + .05, 'sawtooth', .035, t); tone(f * 2, d, 'triangle', .03, t); t += d;
+  }
+  [523, 659].forEach(f=>tone(f, .7, 'triangle', .03, t - .7));
+}
+const sparkle = (delay = 0)=>[1319, 1568, 2093, 2637].forEach((f, i)=>tone(f, .18, 'sine', .04, delay + i * .07));
+const SFX = {
+  pick:   ()=>tone(520, .06, 'triangle', .05),                                     // узяв клавішу з лотка
+  place:  ()=>{ noise(.05, .4, 0, 3200); tone(1046, .08, 'sine', .06, .03); tone(1568, .12, 'sine', .05, .09); },   // клац — на місці
+  wrong:  ()=>{ tone(240, .16, 'triangle', .07); tone(200, .2, 'triangle', .06, .1); },
+  back:   ()=>tone(380, .07, 'sine', .035),                                        // відпустив повз клавіатуру
+  appear: ()=>tone(880, .05, 'sine', .025),                                        // у лотку нова клавіша
+  hint:   ()=>sparkle(),
+  press:  ()=>noise(.03, .18, 0, 4200),                                            // натиснув справжню клавішу
+};
+
+/* ================= Допоміжне ================= */
+const $ = id=>document.getElementById(id);
+const fmtTime = s=>`${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const plural = (n, [one, few, many])=>{ const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; };
+const esc = s=>String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const starsText = n=>'★'.repeat(n) + `<i>${'★'.repeat(3 - n)}</i>`;
+const starIcon = `<svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-star"/></svg>`;
+const pointsWord = n=>`${n} ${plural(n, ['бал', 'бали', 'балів'])}`;
+const shuffle = a=>{ for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let toastTimer = 0;
+function showToast(text){
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function confetti(n = 70){
+  const colors = ['#6C5CE7','#16A3A0','#FF6B4A','#FFC93C','#FF5D9E','#2D9CDB'];
+  for(let i = 0; i < n; i++){
+    const d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random() * 100 + 'vw';
+    d.style.background = colors[i % colors.length];
+    d.style.animationDuration = (2 + Math.random() * 2) + 's';
+    d.style.animationDelay = Math.random() * .6 + 's';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 5000);
+  }
+}
+
+/* ================= Малювання клавіш ================= */
+// Обрис клавіші — многокутник із заокругленими кутами, у сотих частках клавіші. inset — відступ від краю: l, t, r, b.
+// Enter — «гачок»: угорі на всю ширину, унизу на чверть клавіші вужчий зліва
+function outline(k, { l, t, r, b }){
+  const W = k.w * 100, H = k.h * 100;
+  if(k.shape === 'enter'){
+    const n = 25;
+    return [[l, t], [W - r, t], [W - r, H - b], [n + l, H - b], [n + l, 100 - b], [l, 100 - b]];
+  }
+  return [[l, t], [W - r, t], [W - r, H - b], [l, H - b]];
+}
+function roundPath(p, rad){
+  let d = '';
+  p.forEach((q, i)=>{
+    const a = p[(i + p.length - 1) % p.length], c = p[(i + 1) % p.length];
+    const da = Math.hypot(a[0] - q[0], a[1] - q[1]), dc = Math.hypot(c[0] - q[0], c[1] - q[1]);
+    const r = Math.min(rad, da / 2, dc / 2);
+    const s = [q[0] + (a[0] - q[0]) / da * r, q[1] + (a[1] - q[1]) / da * r];
+    const e = [q[0] + (c[0] - q[0]) / dc * r, q[1] + (c[1] - q[1]) / dc * r];
+    d += `${i ? 'L' : 'M'}${s[0].toFixed(1)} ${s[1].toFixed(1)}Q${q[0]} ${q[1]} ${e[0].toFixed(1)} ${e[1].toFixed(1)}`;
+  });
+  return d + 'Z';
+}
+const GAP = 5;   // проміжок між клавішами, соті частки клавіші
+const capSVG = k=>`<svg class="cap" viewBox="0 0 ${k.w * 100} ${k.h * 100}" preserveAspectRatio="none" aria-hidden="true">
+  <path class="side" d="${roundPath(outline(k, { l:GAP, t:GAP, r:GAP, b:GAP }), 14)}"/>
+  <path class="face" d="${roundPath(outline(k, { l:GAP + 9, t:GAP + 4, r:GAP + 9, b:GAP + 17 }), 11)}"/></svg>`;
+const holeSVG = k=>`<svg class="cap" viewBox="0 0 ${k.w * 100} ${k.h * 100}" preserveAspectRatio="none" aria-hidden="true">
+  <path class="hole" d="${roundPath(outline(k, { l:GAP + 2, t:GAP + 2, r:GAP + 2, b:GAP + 2 }), 13)}"/></svg>`;
+// Розмір напису — за найдовшим рядком: довгі назви дрібніші
+function fontFor(t){
+  const n = Math.max(...String(t).split('\n').map(s=>[...s].length));
+  return n <= 1 ? .42 : n <= 2 ? .36 : n <= 3 ? .3 : n <= 5 ? .26 : n <= 7 ? .22 : .19;
+}
+const serviceLabel = s=>BOOST && s.sym ? s.sym : s.label;
+function labelHTML(k){
+  if(k.cyr) return `<span class="lat">${esc(k.lat)}</span><span class="cyr">${esc(k.cyr)}</span>`;
+  if(k.main) return `<span class="lat">${esc(k.top)}</span><span class="cyr dig">${esc(k.main)}</span>`;
+  const s = k.kind && SERVICE[k.kind];
+  const t = s ? serviceLabel(s) : k.txt;
+  const f = s && s.icon ? .36 : fontFor(t);
+  return (t ? `<span class="lb${k.shape === 'enter' ? ' up' : ''}" style="--f:${f}">${s && s.icon ? t : esc(t)}</span>` : '') + (s && s.led ? '<i class="led"></i>' : '');
+}
+const keyStyle = (k, dy = 0)=>`--x:${k.x}; --y:${k.y - dy}; --w:${k.w}; --h:${k.h}`;
+const capHTML = k=>capSVG(k) + labelHTML(k);
+// Окрема клавіша поза клавіатурою: у лотку, у «привіті», на кнопці гравця
+const looseKey = (k, u, extra = '')=>`<div class="k${k.kind ? ' svc' : ''}" style="--u:${u}px; --w:${k.w}; --h:${k.h}; position:relative; left:auto; top:auto"${extra}>${capHTML(k)}</div>`;
+
+// Клавіатура: full — з F1–F12 і стрілками; empty — які клавіші ще порожні (місця); mini — без написів
+function keyboardHTML({ full = true, empty = [], mini = false } = {}){
+  const list = KB.filter(k=>full || isMain(k));
+  const dy = full ? 0 : 1.5;
+  const kw = full ? 18.5 : 15, kh = full ? 6.5 : 5;
+  return `<div class="kb${mini ? ' mini' : ''}"><div class="kb-in" style="--kw:${kw}; --kh:${kh}">` + list.map(k=>{
+    const slot = empty.includes(k.id);
+    return `<div class="k${k.kind ? ' svc' : ''}${slot ? ' slot' : ''}" data-id="${k.id}" data-code="${k.code || ''}" style="${keyStyle(k, dy)}">${slot ? holeSVG(k) : capHTML(k)}</div>`;
+  }).join('') + '</div></div>';
+}
+
+/* ================= Теми ================= */
+const isOpen = (x, total = store.total)=>total >= x.at;
+const chosenTheme = ()=>{ const t = THEMES.find(t=>t.id === store.theme); return t && isOpen(t) ? t : THEMES[0]; };
+function applyTheme(el, t = chosenTheme()){
+  const vars = { case:t.case, 'case-d':t.caseD, cap:t.cap, side:t.side, cap2:t.cap2, side2:t.side2, 'k-ink':t.ink, cyr:t.cyr, hole:t.hole, 'hole-line':t.holeLine, lit:t.lit };
+  for(const [k, v] of Object.entries(vars)) el.style.setProperty('--' + k, v);
+  el.classList.toggle('rgb', !!t.rgb);
+}
+const themePrev = t=>`<span class="theme-prev" style="background:${t.case}"><i style="background:${t.cap}"></i><i style="background:${t.cap2}"></i><i style="background:${t.cap}"></i></span>`;
+
+function updateTeacherNote(){
+  const notes = [BOOST && 'рівні для 5–7 класів', !soundOn && 'без звуку'].filter(Boolean);
+  const text = notes.length ? 'Налаштування вчителя: ' + notes.join(' · ') : '';
+  document.querySelectorAll('.teacher-note').forEach(n=>n.textContent = text);
+}
+
+/* ================= Екрани ================= */
+function showScreen(id){
+  for(const s of ['setup', 'game', 'result']) $(s).hidden = s !== id;
+  window.scrollTo(0, 0);
+}
+function renderSetup(){
+  $('levels').innerHTML = Object.entries(LEVELS).map(([id, L])=>{
+    const b = store.best[id];
+    return `<button class="level" data-level="${id}" title="Норма часу — ${fmtTime(L.par)}, помилок для третьої зірки — не більше ${L.err}">
+      <span class="lv-ico">${L.ico}</span>
+      <span class="lv-name">${L.name}</span>
+      <span class="lv-info">${L.keys.length} ${plural(L.keys.length, ['клавіша', 'клавіші', 'клавіш'])} · ${L.info}</span>
+      <span class="lv-best${b ? ' got' : ''}">${b ? `Рекорд: ${b.score} · ${'★'.repeat(b.stars) + '☆'.repeat(3 - b.stars)} · ${fmtTime(b.time)}` : 'Ще не грали'}</span>
+    </button>`;
+  }).join('');
+  renderGarage();
+  const got = STICKERS.filter(st=>store.stickers[st.id]).length;
+  $('stickerCount').textContent = `${got} з ${STICKERS.length}`;
+  $('stickers').innerHTML = STICKERS.map(stickerHTML).join('');
+}
+const stickerHTML = st=>{
+  const n = stickerProgress(st);
+  const part = n ? `<span class="st-part" style="--fill:${Math.round(n / st.need * 100)}%"><span>${st.ico}</span></span>` : '';
+  return `<span class="sticker${store.stickers[st.id] ? '' : ' no'}${n >= st.need ? ' full' : ''}" data-st="${st.id}" title="${st.how}${n ? ` — уже ${n} з ${st.need}` : ''}">` +
+    `<span class="st-ico"><span>${st.ico}</span>${part}</span>${st.name}${n ? `<small>${n} з ${st.need}</small>` : ''}</span>`;
+};
+$('stickers').addEventListener('click', e=>{
+  const st = STICKERS.find(st=>st.id === e.target.closest('[data-st]')?.dataset.st);
+  const n = st && stickerProgress(st);
+  if(st) showToast(`${st.ico} ${st.how}${n ? ` — уже ${n} з ${st.need}` : ''}`);
+});
+
+function renderGarage(){
+  $('bank').innerHTML = `${starIcon} ${pointsWord(store.total)}`;
+  const next = THEMES.filter(t=>!isOpen(t)).sort((a, b)=>a.at - b.at)[0];
+  $('nextGoal').textContent = next ? `Далі відкриється клавіатура ${next.ico} ${next.name} — ще ${pointsWord(next.at - store.total)}` : 'Усі клавіатури вже відкрито!';
+  $('themePicks').innerHTML = THEMES.map(t=>{
+    const open = isOpen(t);
+    return `<button type="button" class="pick${t === chosenTheme() ? ' on' : ''}" data-theme="${t.id}" ${open ? '' : 'disabled'}>
+      <span class="thumb">${themePrev(t)}</span><span>${open ? t.ico : '🔒'} ${t.name}</span>${open ? '' : `<small>★ ${t.at}</small>`}</button>`;
+  }).join('');
+  $('gPrev').innerHTML = keyboardHTML({ full:false, mini:true });
+  $('gPrev').style.setProperty('--u', '13px');
+  applyTheme($('gPrev'));
+  applyTheme($('introKey'));
+}
+$('themePicks').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-theme]');
+  if(!b || b.disabled) return;
+  store.theme = b.dataset.theme;
+  save();
+  SFX.place();
+  renderGarage();
+});
+
+/* ================= Гравці ================= */
+const nameOverlay = $('nameOverlay'), profileOverlay = $('profileOverlay');
+const playerIco = ()=>looseKey({ w:1, h:1, txt:'' }, 24).replace('</div>', '<span class="lb" style="--f:.5">А</span></div>');
+function renderPlayerBtn(){
+  $('playerIco').innerHTML = playerIco();
+  applyTheme($('playerIco'));
+  $('playerName').textContent = player || 'Гравець';
+}
+function openNameModal(required){
+  $('nameCancel').hidden = required;
+  const names = Object.keys(db.players).sort((a, b)=>a.localeCompare(b, 'uk'));
+  $('knownPlayers').innerHTML = names.length
+    ? `<span class="note-small" style="width:100%; margin:0">Уже грали на цьому комп'ютері — обери себе:</span>` +
+      names.map(n=>`<button type="button" class="chip-btn" data-n="${esc(n)}">👤 ${esc(n)}</button>`).join('')
+    : '';
+  $('nameInput').value = '';
+  $('nameErr').textContent = '';
+  nameOverlay.classList.add('show');
+  setTimeout(()=>$('nameInput').focus(), 50);
+}
+$('knownPlayers').addEventListener('click', e=>{ const b = e.target.closest('[data-n]'); if(b) enterGame(b.dataset.n); });
+$('nameForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const n = $('nameInput').value.trim().replace(/\s+/g, ' ');
+  if(n.length < 2){ $('nameErr').textContent = 'Введи своє ім\'я (хоча б 2 літери).'; $('nameInput').focus(); return; }
+  enterGame(n);
+});
+$('nameCancel').addEventListener('click', ()=>nameOverlay.classList.remove('show'));
+function enterGame(name){
+  loadPlayer(name);
+  nameOverlay.classList.remove('show');
+  profileOverlay.classList.remove('show');
+  renderPlayerBtn();
+  toSetup();
+}
+function renderProfile(){
+  const names = Object.keys(db.players).sort((a, b)=>a === player ? -1 : b === player ? 1 : a.localeCompare(b, 'uk'));
+  $('playerList').innerHTML = names.map(n=>{
+    const p = db.players[n], me = n === player;
+    const st = Object.keys(p.stickers || {}).length;
+    return `<div class="pl-row${me ? ' me' : ''}">
+      <span class="pl-name">${esc(n)}<small>★ ${p.total || 0} · наліпок ${st} з ${STICKERS.length}</small></span>
+      ${me ? '<span class="pl-you">це ти</span>' : `<button type="button" class="btn btn-primary btn-small" data-play="${esc(n)}">Грати</button>`}
+      <button type="button" class="pl-del" data-del="${esc(n)}" title="Видалити гравця">✕</button>
+    </div>`;
+  }).join('');
+  $('addInput').value = '';
+  $('addErr').textContent = '';
+}
+function openProfile(){
+  if(!player){ openNameModal(true); return; }
+  if(G) toSetup();
+  renderProfile();
+  profileOverlay.classList.add('show');
+}
+function deletePlayer(name){
+  if(!confirm(`Видалити гравця «${name}» з цього комп'ютера разом із балами й наліпками?`)) return;
+  delete db.players[name];
+  if(name !== player){ save(); renderProfile(); return; }
+  const other = Object.keys(db.players)[0];
+  if(other){ enterGame(other); return; }
+  db.current = null;
+  save();
+  player = null;
+  store = newProfile();
+  renderPlayerBtn();
+  profileOverlay.classList.remove('show');
+  toSetup();
+  openNameModal(true);
+}
+$('playerList').addEventListener('click', e=>{
+  const play = e.target.closest('[data-play]'), del = e.target.closest('[data-del]');
+  if(play) enterGame(play.dataset.play);
+  if(del) deletePlayer(del.dataset.del);
+});
+$('addForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const n = $('addInput').value.trim().replace(/\s+/g, ' ');
+  if(n.length < 2){ $('addErr').textContent = 'Введи ім\'я (хоча б 2 літери).'; return; }
+  enterGame(n);
+});
+$('playerBtn').addEventListener('click', openProfile);
+$('profClose').addEventListener('click', ()=>profileOverlay.classList.remove('show'));
+$('levels').addEventListener('click', e=>{
+  const b = e.target.closest('[data-level]');
+  if(b) start(b.dataset.level);
+});
+
+/* ================= Гра ================= */
+let G = null;           // поточна гра
+let D = null;           // клавіша, яку зараз несуть
+let lastLevel = 'easy';
+let U = 48;             // ширина звичайної клавіші, px; перераховується при зміні вікна
+
+// Чи пасує клавіша з лотка на місце: та сама службова клавіша й та сама форма.
+// Тож обидва Ctrl чи обидва Alt підходять на будь-яке з двох місць, а короткий Shift на місце довгого — ні
+const fits = (id, slotId)=>{ const a = KEY[id], b = KEY[slotId]; return a.kind === b.kind && a.w === b.w && a.h === b.h; };
+const slotEls = ()=>[...document.querySelectorAll('#board .k.slot')];
+
+function measure(){
+  if(!G) return;
+  const board = $('board');
+  const kw = (G.L.full ? 18.5 : 15) + .6, kh = (G.L.full ? 6.5 : 5) + .75;
+  const byW = (board.clientWidth - 6) / kw;
+  const byH = (innerHeight - 250) / kh;   // щоб клавіатуру й підказку під нею було видно без прокрутки
+  U = Math.floor(Math.max(16, Math.min(60, byW, Math.max(byH, 36))));   // на телефоні дрібно, зате видно всю клавіатуру
+  $('game').style.setProperty('--u', U + 'px');
+  G.tray.forEach(sizeTrayKey);
+}
+window.addEventListener('resize', measure);
+
+function start(levelId){
+  stopGame();
+  lastLevel = levelId;
+  const L = LEVELS[levelId];
+  // Черга клавіш. На «Легко» спершу Пробіл і Enter — їх найлегше впізнати за формою
+  let queue = shuffle([...L.keys]);
+  if(levelId === 'easy') queue = [...shuffle(['space', 'enter']), ...queue.filter(id=>id !== 'space' && id !== 'enter')];
+  G = { id:levelId, L, queue, tray:[], pending:0, total:L.keys.length, placed:0, firstTry:0, errors:0, hints:0,
+        confused:{}, pressed:{}, firstOf:{}, score:0, t:0, last:performance.now(), paused:false, phase:'play', timers:[] };
+  applyTheme($('game'));
+  $('board').innerHTML = keyboardHTML({ full:L.full, empty:L.keys });
+  $('trayKeys').innerHTML = '';
+  $('score').textContent = '0';
+  $('time').textContent = '0:00';
+  $('timeChip').classList.remove('over-par');
+  $('pauseOver').hidden = true;
+  updateProgress();
+  setInfo('👉', 'Наведи вказівник на клавішу в лотку, натисни ліву кнопку миші й, не відпускаючи, перенеси клавішу на її місце.');
+  showScreen('game');
+  measure();
+  refill();
+  G.tick = setInterval(tick, 250);
+}
+
+function tick(){
+  if(!G || G.phase !== 'play') return;
+  const now = performance.now();
+  if(!G.paused) G.t += now - G.last;
+  G.last = now;
+  $('time').textContent = fmtTime(G.t / 1000);
+  $('timeChip').classList.toggle('over-par', G.t / 1000 > G.L.par);
+}
+
+// Лоток: нові клавіші з'являються по одній, доки їх не стане L.tray
+function refill(){
+  let delay = 0;
+  while(G.tray.length + G.pending < G.L.tray && G.queue.length){
+    const id = G.queue.shift(), g = G;
+    G.pending++;
+    delay += G.tray.length + G.pending > 1 ? 380 : 250;
+    G.timers.push(setTimeout(()=>{ if(G !== g) return; G.pending--; addTrayKey(id); }, delay));
+  }
+  updateTrayLeft();
+}
+function addTrayKey(id){
+  const k = KEY[id];
+  const el = document.createElement('div');
+  el.className = 'k svc';
+  el.title = SERVICE[k.kind].name;
+  el.style.cssText = `--w:${k.w}; --h:${k.h}`;
+  el.innerHTML = capHTML(k);
+  const item = { id, el, tries:0 };
+  el.addEventListener('pointerdown', e=>grab(e, item));
+  G.tray.push(item);
+  $('trayKeys').appendChild(el);
+  sizeTrayKey(item);
+  SFX.appear();
+  updateTrayLeft();
+}
+// У лотку довга клавіша (Пробіл) зменшена, щоб уміститися; на клавіатурі вона знову повного розміру
+function sizeTrayKey(item){
+  const k = KEY[item.id], room = $('trayKeys').clientWidth - 4;
+  const u = Math.min(U, room / k.w);
+  item.el.style.setProperty('--u', u + 'px');
+}
+function updateTrayLeft(){
+  const n = G.queue.length + G.pending;
+  $('trayLeft').textContent = n ? `Ще ${n} ${plural(n, ['клавіша', 'клавіші', 'клавіш'])} на черзі` : G.tray.length ? 'Це останні!' : '';
+}
+function updateProgress(){ $('progress').textContent = `${G.placed} з ${G.total}`; }
+function setInfo(ico, html, cls = ''){
+  $('info').className = 'info' + (cls ? ' ' + cls : '');
+  $('info').innerHTML = `<span class="ico">${ico}</span><span>${html}</span>`;
+}
+
+/* ---------- Перетягування ---------- */
+function grab(e, item){
+  if(!G || G.paused || G.phase !== 'play' || D) return;
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  const k = KEY[item.id], r = item.el.getBoundingClientRect();
+  const sc = r.width / (k.w * U);   // у лотку клавіша могла бути зменшена
+  const ghost = document.createElement('div');
+  ghost.className = 'k svc ghost';
+  ghost.style.cssText = `--u:${U}px; --w:${k.w}; --h:${k.h}`;
+  ghost.innerHTML = capHTML(k);
+  $('game').appendChild(ghost);   // усередині #game — з кольорами обраної теми
+  D = { item, ghost, ox:(e.clientX - r.left) / sc, oy:(e.clientY - r.top) / sc, id:e.pointerId, x0:e.clientX, y0:e.clientY, moved:false, over:null, at:performance.now() };
+  item.el.classList.add('lifted');
+  document.body.classList.add('dragging');
+  moveGhost(e.clientX, e.clientY);
+  SFX.pick();
+}
+function moveGhost(x, y){
+  const k = KEY[D.item.id];
+  D.ghost.style.left = (x - D.ox) + 'px';
+  D.ghost.style.top = (y - D.oy) + 'px';
+  if(Math.hypot(x - D.x0, y - D.y0) > 6) D.moved = true;
+  // Ціль — порожнє місце під центром клавіші, яку несуть, а якщо там нічого — під вказівником
+  const cx = x - D.ox + k.w * U / 2, cy = y - D.oy + k.h * U / 2;
+  const inside = (el, px, py)=>{ const r = el.getBoundingClientRect(); return px >= r.left && px <= r.right && py >= r.top && py <= r.bottom; };
+  const slots = slotEls();
+  const over = slots.find(el=>inside(el, cx, cy)) || slots.find(el=>inside(el, x, y)) || null;
+  if(over !== D.over){
+    D.over?.classList.remove('over');
+    over?.classList.add('over');
+    D.over = over;
+  }
+}
+window.addEventListener('pointermove', e=>{ if(D && e.pointerId === D.id) moveGhost(e.clientX, e.clientY); });
+window.addEventListener('pointerup', e=>{ if(D && e.pointerId === D.id) drop(); });
+window.addEventListener('pointercancel', e=>{ if(D && e.pointerId === D.id) giveBack(); });
+
+function endDrag(){
+  D.over?.classList.remove('over');
+  document.body.classList.remove('dragging');
+  const d = D;
+  D = null;
+  return d;
+}
+// Клавіша повертається в лоток
+function giveBack(quiet = false){
+  if(!D) return;
+  const d = endDrag(), r = d.item.el.getBoundingClientRect();
+  d.ghost.classList.add('fly', 'back');
+  d.ghost.style.left = r.left + 'px';
+  d.ghost.style.top = r.top + 'px';
+  setTimeout(()=>{ d.ghost.remove(); d.item.el.classList.remove('lifted'); }, 200);
+  if(!quiet) SFX.back();
+}
+function drop(){
+  const { item, over, moved } = D;
+  const s = SERVICE[KEY[item.id].kind];
+  if(!moved && !over){
+    // Просто клацнули по клавіші в лотку — підказуємо, як її називають і що робити
+    giveBack(true);
+    showToast(`Це ${s.name}. Перетягни її на місце: натисни й не відпускай кнопку миші`);
+    return;
+  }
+  if(!over){ giveBack(); return; }   // відпустили повз порожні місця — без штрафу
+  if(fits(item.id, over.dataset.id)) place(item, over);
+  else wrong(item, over);
+}
+
+function place(item, slot){
+  const d = endDrag(), k = KEY[slot.dataset.id], s = SERVICE[k.kind];
+  const r = slot.getBoundingClientRect();
+  d.ghost.classList.add('fly');
+  d.ghost.style.left = r.left + 'px';
+  d.ghost.style.top = r.top + 'px';
+  // Клавіша зникає з лотка, а місце на клавіатурі заповнюється
+  G.tray.splice(G.tray.indexOf(item), 1);
+  item.el.remove();
+  const g = G;
+  G.timers.push(setTimeout(()=>{
+    d.ghost.remove();
+    if(G !== g) return;
+    slot.classList.remove('slot', 'hint');
+    slot.innerHTML = capHTML(k);
+    slot.classList.add('snap');
+    setTimeout(()=>slot.classList.remove('snap'), 700);
+  }, 190));
+  // Підказка для цієї клавіші більше не потрібна (друге таке саме місце теж перестає блимати)
+  slotEls().forEach(el=>{ if(fits(item.id, el.dataset.id)) el.classList.remove('hint'); });
+  const pts = item.tries ? PTS_LATER : PTS_FIRST;
+  G.score += pts;
+  G.placed++;
+  if(!item.tries) G.firstTry++;
+  G.firstOf[k.kind] = (G.firstOf[k.kind] ?? true) && !item.tries;
+  bumpScore();
+  popAt(slot, '+' + pts);
+  SFX.place();
+  setInfo('✅', `<b>${s.name}</b> — ${s.what}.`, 'good');
+  updateProgress();
+  if(G.placed === G.total){ G.phase = 'end'; G.timers.push(setTimeout(finish, 450)); return; }
+  refill();
+}
+
+function wrong(item, slot){
+  giveBack(true);
+  const k = KEY[item.id], s = SERVICE[k.kind], there = KEY[slot.dataset.id];
+  G.errors++;
+  item.tries++;
+  const pair = `${s.name} → ${SERVICE[there.kind].name}`;
+  G.confused[pair] = (G.confused[pair] || 0) + 1;
+  slot.classList.remove('bad');
+  void slot.offsetWidth;   // щоб анімація повторилась
+  slot.classList.add('bad');
+  setTimeout(()=>slot.classList.remove('bad'), 600);
+  const shape = there.w !== k.w || there.h !== k.h;
+  popAt(slot, shape ? 'Не влазить!' : 'Не сюди!', 'no');
+  SFX.wrong();
+  setInfo('🤔', shape ? `${s.name} сюди не влазить: це місце іншої форми.` : `Це місце не для ${s.name}. Подивись, що стоїть поруч.`, 'bad');
+  // Після кількох помилок з однією клавішею її місце (обидва, якщо їх два) починає блимати
+  if(item.tries === G.L.hint){
+    G.hints++;
+    slotEls().forEach(el=>{ if(fits(item.id, el.dataset.id)) el.classList.add('hint'); });
+    SFX.hint();
+    setInfo('💡', `Підказка: місце для <b>${s.name}</b> блимає жовтим.`);
+  }
+}
+
+function popAt(el, text, cls = ''){
+  const r = el.getBoundingClientRect(), pr = $('play').getBoundingClientRect();
+  const p = document.createElement('div');
+  p.className = 'pop' + (cls ? ' ' + cls : '');
+  p.textContent = text;
+  p.style.left = (r.left + r.width / 2 - pr.left) + 'px';
+  p.style.top = (r.top - pr.top + 4) + 'px';
+  $('play').appendChild(p);
+  setTimeout(()=>p.remove(), 900);
+}
+function bumpScore(){
+  const s = $('score');
+  s.textContent = G.score;
+  s.classList.add('bump');
+  setTimeout(()=>s.classList.remove('bump'), 200);
+}
+
+function pause(){
+  if(!G || G.phase !== 'play' || G.paused) return;
+  if(D) giveBack(true);
+  tick();
+  G.paused = true;
+  $('pauseOver').hidden = false;
+}
+function resume(){
+  if(!G || !G.paused) return;
+  G.paused = false;
+  G.last = performance.now();
+  $('pauseOver').hidden = true;
+}
+function stopGame(){
+  if(!G) return;
+  if(D){ D.ghost.remove(); endDrag(); }
+  clearInterval(G.tick);
+  G.timers.forEach(clearTimeout);
+  G.phase = 'stopped';
+  document.querySelectorAll('.k.ghost').forEach(el=>el.remove());
+}
+
+// Клавіатуру зібрано. Програти не можна: зірки показують, як вдалося.
+// Зірки: 1 — за зібрану клавіатуру; +1 — помилок не більше L.err; +1 — вклався в норму часу L.par
+function finish(){
+  tick();
+  clearInterval(G.tick);
+  const g = G, L = g.L, time = g.t / 1000;
+  const clean = g.errors <= L.err, inPar = time <= L.par;
+  const stars = 1 + (clean ? 1 : 0) + (inPar ? 1 : 0);
+  const bonus = (g.errors === 0 ? BONUS_CLEAN : 0) + (inPar ? BONUS_PAR : 0);
+  const score = g.score + bonus;
+  const prev = store.best[g.id];
+  const record = !prev || score > prev.score || (score === prev.score && time < prev.time);
+  if(record) store.best[g.id] = { score, stars, time:Math.round(time) };
+  const before = store.total;
+  store.total += score;
+  store.games++;
+  store.placed += g.placed;
+  Object.assign(store.pressed, g.pressed);
+  if(stars === 3 && g.id !== 'easy') store.stars3++;
+  const opened = THEMES.filter(t=>t.at > before && isOpen(t));
+  const arrowsClean = L.keys.includes('up') && ['up', 'down', 'left', 'right'].every(k=>g.firstOf[k]);
+  const run = { level:g.id, stars, errors:g.errors, time, par:L.par, hints:g.hints, arrowsClean };
+  const earned = STICKERS.filter(st=>!store.stickers[st.id] && (st.test ? st.test(run) : st.count(store) >= st.need));
+  earned.forEach(st=>store.stickers[st.id] = 1);
+  save();
+
+  // Хвиля світла по клавіатурі, потім — результат
+  document.querySelectorAll('#board .k').forEach(el=>{
+    el.style.setProperty('--d', (parseFloat(el.style.getPropertyValue('--x')) * .045).toFixed(2) + 's');
+    el.classList.add('wave');
+  });
+  if(stars === 3 || (record && prev)){ popper(.2); bigFanfare(.3); }
+  else fanfare();
+
+  $('resEmoji').textContent = stars === 3 ? '🏆' : '🎉';
+  $('resTitle').textContent = stars === 3 ? 'Чудово! Клавіатуру зібрано' : 'Клавіатуру зібрано!';
+  $('resStars').innerHTML = starsText(stars);
+  $('resScore').innerHTML = `${starIcon} ${pointsWord(score)}`;
+  $('resRecord').textContent = record && prev ? '🏆 Новий рекорд!' : '';
+  const confused = Object.entries(g.confused).sort((a, b)=>b[1] - a[1]).slice(0, 3)
+    .map(([p, n])=>`${p}${n > 1 ? ` ×${n}` : ''}`).join('<br>');
+  const bonusText = [g.errors === 0 && `без помилок +${BONUS_CLEAN}`, inPar && `вчасно +${BONUS_PAR}`].filter(Boolean).join(', ');
+  $('resList').innerHTML = [
+    ['Рівень', `${L.ico} ${L.name}`],
+    ['Час', `${fmtTime(time)} (норма — ${fmtTime(L.par)})`],
+    ['З першої спроби', `${g.firstTry} з ${g.total}`],
+    ['Поклав не туди', g.errors],
+    confused && ['Найчастіше плутав (клавіша → чиє місце)', confused],
+    g.hints && ['Місце блимало-підказувало', `${g.hints} ${plural(g.hints, ['раз', 'рази', 'разів'])}`],
+    bonusText && ['Бонус', bonusText],
+    Object.keys(g.pressed).length && ['Натискав справжні службові клавіші', Object.keys(g.pressed).length],
+    ['У скарбничці', `★ ${store.total}`],
+  ].filter(Boolean).map(([k, v])=>`<li><span>${k}</span><b>${v}</b></li>`).join('');
+  $('resUnlock').innerHTML = opened.length ? `<div class="unlock"><b>🔓 Відкрито!</b><div class="unlock-list">${opened.map(t=>
+    `<span class="unlock-item">${themePrev(t)}Клавіатура: ${t.ico} ${t.name}</span>`).join('')}</div></div>` : '';
+  $('resUnlock').innerHTML += earned.length ? `<div class="unlock"><b>🎉 ${earned.length > 1 ? 'Нові наліпки' : 'Нова наліпка'}!</b><div class="unlock-list">${earned.map(stickerHTML).join('')}</div></div>` : '';
+  $('resUnlock').querySelectorAll('.sticker').forEach(s=>s.classList.add('new'));
+  if(opened.length || earned.length) sparkle(1.6);
+  G.timers.push(setTimeout(()=>{
+    if(G !== g) return;
+    renderSetup();
+    showScreen('result');
+    if(stars === 3 || (record && prev)) confetti(stars === 3 ? 160 : 90);
+  }, 1500));
+}
+
+function toSetup(){ stopGame(); G = null; renderSetup(); showScreen('setup'); }
+
+/* ================= Справжня клавіатура ================= */
+// Натиснув справжню клавішу — така сама на екрані світиться (якщо вона вже на місці).
+// Якщо ця клавіша ще в лотку, вона там здригається: «я тут, знайди мені місце». Порожні місця не підказують нічого.
+// Клавіші, що в браузері щось роблять (Tab, Пробіл, стрілки, F5…), під час гри нічого не роблять, крім F11 і F12
+const KIND_OF = Object.fromEntries(KB.filter(k=>k.kind).map(k=>[k.code, k.kind]));
+const litTimers = {};
+function lightKey(code, on){
+  const el = document.querySelector(`#board .k[data-code="${code}"]`);
+  if(!el || el.classList.contains('slot')) return;
+  el.classList.toggle('lit', on);
+  clearTimeout(litTimers[code]);
+  if(on) litTimers[code] = setTimeout(()=>el.classList.remove('lit'), 1500);   // keyup міг і не прийти (Win, PrtSc)
+}
+function capsLed(e){
+  const kb = document.querySelector('#board .kb');
+  if(kb && e.getModifierState) kb.classList.toggle('caps', e.getModifierState('CapsLock'));
+}
+document.addEventListener('keydown', e=>{
+  if(e.ctrlKey && e.altKey && e.code === 'KeyZ'){ e.preventDefault(); setSound(!soundOn); return; }
+  if(e.ctrlKey && e.altKey && e.code === 'KeyB'){ e.preventDefault(); toggleBoost(); return; }
+  if($('game').hidden || !G) return;
+  if(e.code !== 'F11' && e.code !== 'F12' && !(e.ctrlKey && e.shiftKey)) e.preventDefault();
+  if(e.repeat) return;
+  capsLed(e);
+  if(G.phase !== 'play' || G.paused) return;
+  lightKey(e.code, true);
+  const kind = KIND_OF[e.code];
+  if(!kind) return;
+  SFX.press();
+  G.pressed[kind] = 1;
+  const inTray = G.tray.find(it=>KEY[it.id].code === e.code) || G.tray.find(it=>KEY[it.id].kind === kind);
+  if(inTray && !inTray.el.classList.contains('lifted')){
+    inTray.el.classList.remove('nudge');
+    void inTray.el.offsetWidth;
+    inTray.el.classList.add('nudge');
+  }
+});
+document.addEventListener('keyup', e=>{
+  if($('game').hidden || !G) return;
+  capsLed(e);
+  if(e.code === 'PrintScreen'){ lightKey(e.code, true); setTimeout(()=>lightKey(e.code, false), 250); if(G.phase === 'play' && !G.paused) G.pressed.prt = 1; return; }
+  lightKey(e.code, false);
+});
+
+// Під час гри не виділяється текст і не з'являється контекстне меню
+document.addEventListener('mousedown', e=>{ if(!$('game').hidden && !e.target.closest('[data-ui]')) e.preventDefault(); });
+document.addEventListener('contextmenu', e=>{ if(!$('game').hidden) e.preventDefault(); });
+// Вікно втратило фокус (Win, інша програма) — пауза, час не йде
+window.addEventListener('blur', pause);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) pause(); });
+
+$('pauseBtn').addEventListener('click', e=>{ e.currentTarget.blur(); if(G) G.paused ? resume() : pause(); });
+$('resumeBtn').addEventListener('click', e=>{ e.currentTarget.blur(); resume(); });
+$('exitBtn').addEventListener('click', toSetup);
+$('againBtn').addEventListener('click', ()=>start(lastLevel));
+$('levelsBtn').addEventListener('click', toSetup);
+
+/* ================= Повний екран ================= */
+const fsBtn = $('fsBtn');
+const isFull = ()=>!!document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches
+  || (innerWidth >= screen.width - 2 && innerHeight >= screen.height - 2);
+function updateFsBtn(){
+  const full = isFull();
+  fsBtn.classList.toggle('full', full);
+  fsBtn.title = full ? 'Звичайне вікно (F11)' : 'На весь екран (F11)';
+  fsBtn.setAttribute('aria-label', fsBtn.title);
+}
+fsBtn.addEventListener('click', ()=>{
+  fsBtn.blur();
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  else if(isFull()) showToast('Щоб вийти з повного екрана, натисни F11');
+  else document.documentElement.requestFullscreen().catch(()=>{});
+});
+document.addEventListener('fullscreenchange', updateFsBtn);
+window.addEventListener('resize', updateFsBtn);
+fsBtn.hidden = !document.fullscreenEnabled;
+updateFsBtn();
+
+/* ================= Запуск ================= */
+{
+  const q = new URLSearchParams(location.search), z = q.get('zvuk');
+  if(z === 'klas' || z === 'tykho'){
+    q.delete('zvuk');
+    const rest = q.toString().replace(/=(?=&|$)/g, '');
+    history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+    setSound(z === 'klas');
+  }
+}
+function toggleBoost(){
+  try{
+    localStorage.setItem(BOOST_KEY, BOOST ? 'off' : 'on');
+    sessionStorage.setItem(BOOST_KEY + '-toast', '1');
+  }catch(e){ showToast('Не вдалося зберегти налаштування'); return; }
+  const q = new URLSearchParams(location.search);
+  q.delete('boost');
+  const rest = q.toString().replace(/=(?=&|$)/g, '');
+  history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+  location.reload();
+}
+try{
+  if(sessionStorage.getItem(BOOST_KEY + '-toast')){
+    sessionStorage.removeItem(BOOST_KEY + '-toast');
+    showToast(BOOST ? 'Рівні для 5–7 класів' : 'Звичайні рівні');
+  }
+}catch(e){}
+$('introKey').innerHTML = looseKey(KEY.enter, 52);
+updateTeacherNote();
+if(db.current && db.players[db.current]) loadPlayer(db.current);
+renderPlayerBtn();
+renderSetup();
+if(!player) openNameModal(true);
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

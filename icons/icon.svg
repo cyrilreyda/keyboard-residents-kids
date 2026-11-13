@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7E6FF0"/><stop offset="1" stop-color="#5340C9"/></linearGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#b)"/>
+  <!-- порожнє місце для клавіші -->
+  <rect x="62" y="318" width="170" height="122" rx="22" fill="#3B2C9E" stroke="#fff" stroke-width="7" stroke-dasharray="20 14" opacity=".85"/>
+  <!-- Enter-«гачок» -->
+  <path d="M214 66h214q22 0 22 22v304q0 22-22 22H300q-22 0-22-22V214q0-22-22-22h-42q-22 0-22-22V88q0-22 22-22z" fill="#C3C6D6"/>
+  <path d="M228 74h186q20 0 20 20v272q0 20-20 20H312q-20 0-20-20V196q0-20-20-20h-44q-20 0-20-20V94q0-20 20-20z" fill="#fff"/>
+  <path d="M392 122v52q0 14-14 14H286" fill="none" stroke="#1B1B3A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M308 162l-26 26 26 26" fill="none" stroke="#1B1B3A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- клавіша, що летить на місце -->
+  <g transform="rotate(-10 140 230)">
+    <rect x="70" y="190" width="150" height="96" rx="20" fill="#FFB45E"/>
+    <rect x="82" y="196" width="126" height="74" rx="16" fill="#FFE27A"/>
+    <text x="145" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="36" fill="#5A3E00">Ctrl</text>
+  </g>
+</svg>

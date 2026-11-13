@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Як грати · Клавіші на місця</title>
+<link href="../fonts/fonts.css" rel="stylesheet">   <!-- локальні шрифти: гра працює без інтернету -->
+<link rel="icon" type="image/png" href="../icons/icon-192.png">
+<style>
+  :root{
+    --bg:#F6F5FB; --ink:#1B1B3A; --ink-soft:#514F72; --surface:#FFFFFF; --line:#E4E1F5;
+    --purple:#6C5CE7; --teal:#16A3A0; --teal-dark:#0E7C7A; --coral:#FF6B4A; --yellow:#FFC93C;
+    --radius-s:10px; --radius-m:16px; --radius-l:26px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Nunito Sans',sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Baloo 2',sans-serif; font-weight:700; margin:0; color:var(--ink); line-height:1.25;}
+  .container{max-width:860px; margin:0 auto; padding:0 16px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:10; background:rgba(246,245,251,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);}
+  .topbar-inner{max-width:860px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:12px;}
+  .back-link{font-family:'Baloo 2',sans-serif; font-weight:600; font-size:14px; color:var(--teal-dark); text-decoration:none; white-space:nowrap;}
+  .back-link:hover{text-decoration:underline;}
+  .play-link{margin-left:auto; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; text-decoration:none; background:var(--teal); color:#fff; border-radius:999px; padding:4px 16px; white-space:nowrap;}
+  .play-link:hover{background:var(--teal-dark);}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:28px 0 6px;}
+  .eyebrow{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--teal-dark);}
+  .hero h1{font-size:32px; margin:2px 0 4px;}
+  .hero p{margin:0; color:var(--ink-soft); font-size:17px;}
+  @media (max-width:600px){ .hero h1{font-size:26px;} }
+
+  /* ---------- Кроки ---------- */
+  .steps{list-style:none; margin:20px 0 0; padding:0; display:grid; gap:14px;}
+  .step{display:grid; grid-template-columns:44px 1fr; gap:16px; align-items:center; background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius-l); padding:18px 20px;}
+  .step.key{border:2px solid var(--teal); box-shadow:0 5px 0 #D2F0EF;}
+  .num{width:44px; height:44px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:22px; align-self:start;}
+  .step h2{font-size:20px; margin-bottom:2px;}
+  .step p{margin:0; color:var(--ink-soft); font-size:15px;}
+  .step p + p{margin-top:4px;}
+  @media (max-width:720px){ .step{grid-template-columns:36px 1fr; gap:10px 12px; padding:14px;} .num{width:36px; height:36px; font-size:18px;} }
+
+  .kbd{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; background:var(--surface); border:1.5px solid var(--line); border-bottom-width:3px; border-radius:7px; padding:0 7px; white-space:nowrap;}
+  code{font-size:14px; background:#EEEDF6; border-radius:6px; padding:1px 6px;}
+
+  /* ---------- Для вчителя ---------- */
+  .teacher{margin-top:28px;}
+  .teacher h2{font-size:24px; margin-bottom:8px;}
+  .card{background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius-l); padding:18px 20px; margin-top:12px;}
+  .card h3{font-size:18px; margin-bottom:6px;}
+  .card p{margin:6px 0 0; font-size:15px;}
+  .card ul{margin:6px 0 0; padding-left:20px; font-size:15px;}
+  table{border-collapse:collapse; font-size:14.5px; width:100%; margin-top:6px;}
+  th, td{padding:6px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top;}
+  th{font-family:'Baloo 2',sans-serif; font-weight:600; color:var(--ink-soft);}
+  .table-scroll{overflow-x:auto;}
+
+  footer{margin:36px 0 30px; text-align:center; font-size:13.5px; color:var(--ink-soft);}
+  @media print{ body{background:#fff;} .topbar{display:none;} .step, .card{break-inside:avoid;} }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-inner">
+  <a class="back-link" href="../index.html">← До клавіатури</a>
+  <a class="play-link" href="../index.html">⌨️ Грати</a>
+</div></div>
+
+<main class="container">
+
+  <header class="hero">
+    <div class="eyebrow">Клавіші на місця · Інструкція</div>
+    <h1>Як грати</h1>
+    <p>Службові клавіші випали з клавіатури. Поверни кожну на її місце й дізнайся, що вона робить.</p>
+  </header>
+
+  <ol class="steps">
+    <li class="step">
+      <span class="num">1</span>
+      <div>
+        <h2>Обери рівень</h2>
+        <p>«Легко» — 9 найважливіших клавіш: Пробіл, Enter, Backspace, обидва Shift, Tab, Caps Lock і обидва Ctrl. «Середньо» — ще Alt, Windows, Esc і стрілки. «Важко» — уся клавіатура: Delete, Insert, Home, End, Page Up, Page Down, Print Screen і клавіша меню.</p>
+      </div>
+    </li>
+    <li class="step key">
+      <span class="num">2</span>
+      <div>
+        <h2>Перетягни клавішу на місце</h2>
+        <p>Ліворуч, у лотку, лежать клавіші. Наведи вказівник на клавішу, натисни ліву кнопку миші й, не відпускаючи її, перенеси клавішу на порожнє місце на клавіатурі. Відпусти — і клавіша стане на місце з клацанням. На планшеті перетягни клавішу пальцем.</p>
+        <p>Пробіл і Enter легко впізнати за формою: Пробіл — найдовший, Enter — великий «гачок» у два ряди. Інші клавіші схожі між собою, тож дивись, що стоїть поруч з порожнім місцем: літери, цифри, сусідні клавіші.</p>
+        <p>Якщо клацнути клавішу в лотку, не перетягуючи, гра скаже, як вона називається.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="num">3</span>
+      <div>
+        <h2>Дізнайся, що робить клавіша</h2>
+        <p>Коли клавіша стає на місце, під клавіатурою з'являється, для чого вона: Backspace стирає знак ліворуч від курсора, Shift — для великих літер, Ctrl + C — копіювати.</p>
+        <p>Якщо поставити клавішу не туди, вона повернеться в лоток. Після двох помилок з однією клавішею її місце почне блимати жовтим.</p>
+        <p>Натисни справжню клавішу на своїй клавіатурі — така сама на екрані засвітиться, якщо вона вже на місці. А якщо вона ще в лотку, то здригнеться там.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="num">4</span>
+      <div>
+        <h2>Зірки й бали</h2>
+        <p>Програти не можна. Клавіша, поставлена з першої спроби, дає 2 бали, не з першої — 1. Зірки: перша — за зібрану клавіатуру, друга — якщо помилок було мало, третя — якщо вклався в норму часу. За клавіатуру без жодної помилки — ще 5 балів, за норму часу — ще 3.</p>
+        <p>Пауза — кнопка ⏸. Якщо перейти в інше вікно, гра стає на паузу сама. Якщо клавіатуру видно не повністю, клацни кнопку зі стрілками вгорі праворуч або натисни <span class="kbd">F11</span>.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="num">5</span>
+      <div>
+        <h2>Відкривай нові клавіатури</h2>
+        <p>Бали з усіх ігор збираються в скарбничку. За них у «Майстерні» відкриваються нові клавіатури: чорна, м'ятна, рожева, ретро, морська, космічна, з різнокольоровою підсвіткою й золота.</p>
+        <p>Нижче — наліпки за досягнення: клавіатура без помилок, усі стрілки з першої спроби, 12 різних службових клавіш, натиснутих на справжній клавіатурі. Клацни сіру наліпку — і дізнаєшся, як її отримати.</p>
+      </div>
+    </li>
+  </ol>
+
+  <section class="teacher" id="teacher">
+    <h2>Для вчителя</h2>
+
+    <div class="card">
+      <h3>Рівні</h3>
+      <div class="table-scroll"><table>
+        <tr><th></th><th>Клавіш</th><th>Що ставити</th><th>У лотку</th><th>Норма часу</th><th>Помилок для 3★</th></tr>
+        <tr><td>🟢 Легко</td><td>9</td><td>Пробіл, Enter, Backspace, Shift ×2, Tab, Caps Lock, Ctrl ×2</td><td>2</td><td>1:00</td><td>до 2</td></tr>
+        <tr><td>🟡 Середньо</td><td>17</td><td>+ Alt ×2, Windows, Esc, 4 стрілки</td><td>3</td><td>1:50</td><td>до 3</td></tr>
+        <tr><td>🔴 Важко</td><td>26</td><td>+ Windows праворуч, Меню, Delete, Insert, Home, End, Page Up, Page Down, Print Screen</td><td>3</td><td>2:50</td><td>до 4</td></tr>
+      </table></div>
+      <p>На «Легко» видно лише основну частину клавіатури, на «Середньо» й «Важко» — ще ряд F1–F12 і блок стрілок праворуч. Решта клавіш уже на місцях і служать орієнтирами. На «Легко» першими в лотку завжди Пробіл і Enter, решта йде впереміш.</p>
+      <p>Помилка — це клавіша, відпущена над чужим порожнім місцем. Клавіша, відпущена повз клавіатуру, просто повертається в лоток без помилки. Два Ctrl, два Alt і дві клавіші Windows однакові, тож кожна з пари підходить на будь-яке з двох місць. Два Shift різної довжини, і короткий на місце довгого не стане.</p>
+      <p>На екрані результату видно час, скільки клавіш поставлено з першої спроби, скільки помилок і які клавіші учень плутав найчастіше (наприклад, «Alt → Ctrl» означає, що Alt клали на місце Ctrl), скільки разів спрацювала підказка й скільки різних службових клавіш учень натискав на справжній клавіатурі.</p>
+      <p>Під час першого запуску гра питає ім'я учня: рекорди, скарбничка, клавіатури й наліпки зберігаються в браузері окремо для кожного імені. Кнопка з ім'ям угорі відкриває список гравців цього комп'ютера.</p>
+    </div>
+
+    <div class="card">
+      <h3>Рівні для 5–7 класів: <code>?boost</code> або <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">B</span></h3>
+      <p>Додайте <code>?boost</code> у кінці адреси. На клавішах лишаються самі значки, як на багатьох справжніх клавіатурах: ⇧ замість Shift, ↵ замість Enter, ⟵ замість Backspace, ⇥ замість Tab. У лотку на одну клавішу більше, норма часу коротша (0:40, 1:15, 2:00), помилок для третьої зірки можна менше (1, 2, 3), а місце починає блимати лише після третьої помилки. Рекорди в цьому режимі зберігаються окремо. Під клавіатурою дрібним шрифтом видно «Налаштування вчителя: рівні для 5–7 класів».</p>
+      <p>Якщо гру встановлено як програму й адреси не видно, натисніть у грі <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">B</span>. Гра перезавантажиться в режимі для 5–7 класів і запам'ятає його на цьому комп'ютері. Повторне натискання повертає звичайні рівні.</p>
+    </div>
+
+    <div class="card">
+      <h3>Звук</h3>
+      <p>За замовчуванням гра зі звуком. Кнопки для учнів немає, вчитель перемикає звук так:</p>
+      <ul>
+        <li><code>?zvuk=tykho</code> у кінці адреси — без звуку, <code>?zvuk=klas</code> — зі звуком; параметр одразу зникає з адреси;</li>
+        <li>або <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">Z</span> у грі (повторне натискання вмикає назад).</li>
+      </ul>
+      <p>Режим запам'ятовується на цьому комп'ютері. Параметри поєднуються: <code>?boost&amp;zvuk=tykho</code>.</p>
+    </div>
+
+    <div class="card">
+      <h3>Без інтернету</h3>
+      <p>Достатньо один раз відкрити гру з інтернетом у Chrome: далі вона відкривається за тією самою адресою й без мережі. Для комп'ютерів, які не бувають онлайн, можна завантажити архів репозиторію, розпакувати й відкрити <code>index.html</code>.</p>
+    </div>
+  </section>
+
+  <footer>Клавіші на місця · Інструкція · у стилі <a href="https://cikavo.me/labs/typing-race/">«Клавіатурних перегонів»</a> з Лабораторії</footer>
+</main>
+
+<script>
+// Офлайн: обробник sw.js зберігає гру в браузері, щоб вона відкривалась без інтернету.
+// Працює лише на сайті (http/https); з папки (file://) гра й так відкривається без мережі
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('../sw.js').catch(()=>{});
+</script>
+</body>
+</html>
