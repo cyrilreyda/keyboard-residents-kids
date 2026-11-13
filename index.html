@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Клавіші на місця · Інформатика в 131-й</title>
+<title>Мешканці клавіатури · Інформатика в 131-й</title>
 <link href="fonts/fonts.css" rel="stylesheet">   <!-- локальні шрифти: гра працює без інтернету -->
 <link rel="manifest" href="manifest.webmanifest">   <!-- гру можна встановити як програму -->
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -184,6 +184,9 @@
   @keyframes glow{from{filter:drop-shadow(0 0 2px #FFF3B0);} to{filter:drop-shadow(0 0 12px #FFD84D);}}
   .say{position:absolute; left:50%; bottom:100%; margin-bottom:6px; transform:translateX(calc(-50% + var(--sh, 0px))); background:#fff; border:2px solid #1B1B3A; border-radius:12px; padding:1px 10px;
     font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; line-height:1.35; white-space:nowrap; color:#1B1B3A; box-shadow:0 3px 0 rgba(27,27,58,.15); opacity:0;}
+  .say .en{display:none; font-weight:800; font-size:21px; line-height:1.2; color:#5340C9;}
+  .say.named .ph{display:none;}
+  .say.named .en{display:block; animation:beat .3s ease;}
   .say::after{content:''; position:absolute; left:50%; top:100%; margin-left:calc(-6px - var(--sh, 0px)); border:6px solid transparent; border-top-color:#1B1B3A;}
 
   /* ---------- Майстерня: скарбничка й теми клавіатури ---------- */
@@ -295,7 +298,7 @@
 
 <div class="topbar"><div class="topbar-inner">
   <a class="back-link" href="https://cyrilreyda.github.io/" data-ui>← Всі ігри</a>
-  <span class="game-title">Клавіші на місця</span>
+  <span class="game-title">Мешканці клавіатури</span>
   <button class="top-btn player-btn" id="playerBtn" type="button" title="Гравці на цьому комп'ютері" data-ui><span class="pb-ico" id="playerIco"></span><span class="long" id="playerName">Гравець</span></button>
   <a class="top-btn" href="guide/index.html" title="Інструкція для учнів і вчителів" data-ui>❓<span class="long"> Як грати</span></a>
   <button class="top-btn fs-btn" id="fsBtn" type="button" title="На весь екран (F11)" aria-label="На весь екран (F11)" data-ui hidden>
@@ -311,8 +314,8 @@
     <div class="intro">
       <span id="introKey"></span>
       <div>
-        <h1>Клавіші на місця</h1>
-        <p>Службові клавіші розгубилися! <span class="hl">Перетягни кожну</span> з лотка на її місце на клавіатурі. Пробіл і Enter упізнаєш за формою, а решту — за тим, що стоїть поруч. А під клавішами, поки їх не було, хтось оселився…</p>
+        <h1>Мешканці клавіатури</h1>
+        <p>Службові клавіші розгубилися, а на їхніх місцях оселилися мешканці! <span class="hl">Перетягни кожну клавішу</span> з лотка на її місце — і мешканець вистрибне й вигукне, як вона називається. Пробіл і Enter упізнаєш за формою, а решту — за тим, що стоїть поруч.</p>
       </div>
     </div>
     <h3 class="levels-title">Обери рівень</h3>
@@ -323,7 +326,7 @@
       <div class="g-row"><h4>Клавіатура</h4><div class="picks" id="themePicks"></div></div>
     </div>
     <div class="stickers-box">
-      <div class="garage-head"><h3>Мешканці клавіатури</h3><span class="next-goal" id="budCount"></span></div>
+      <div class="garage-head"><h3>Хто жив під клавішами</h3><span class="next-goal" id="budCount"></span></div>
       <div class="buds" id="buds"></div>
     </div>
     <div class="stickers-box">
@@ -423,7 +426,7 @@
 // у лотку більше клавіш водночас, коротша норма часу, менше дозволених помилок, підказка пізніше.
 // У встановленій грі (PWA) адреси не видно, тож вчитель перемикає режим ще й Ctrl+Alt+B — це запам'ятовується на пристрої.
 // ?boost в адресі діє лише на цей запуск: один комп'ютер може відкривати гру різним класам різними посиланнями
-const BOOST_KEY = 'key-places-kids-boost';
+const BOOST_KEY = 'keyboard-residents-kids-boost';
 let boostSaved = false;
 try{ boostSaved = localStorage.getItem(BOOST_KEY) === 'on'; }catch(e){}
 const BOOST = boostSaved || new URLSearchParams(location.search).has('boost');
@@ -473,6 +476,13 @@ const SERVICE = {
   down:  { name:'Стрілка вниз',   label:'↓',            what:'переносить курсор на рядок нижче' },
   left:  { name:'Стрілка вліво',  label:'←',            what:'переносить курсор на один знак ліворуч' },
   right: { name:'Стрілка вправо', label:'→',            what:'переносить курсор на один знак праворуч' },
+};
+
+// Назва клавіші в оригіналі: [як пишуть, як вимовити англійською]. Її вигукує мешканець, що вистрибує з-під клавіші
+const EN = {
+  esc:['Esc', 'Escape'], tab:['Tab'], caps:['Caps Lock'], shift:['Shift'], ctrl:['Ctrl', 'Control'], win:['Windows'], alt:['Alt'],
+  space:['Space'], menu:['Menu'], enter:['Enter'], bksp:['Backspace'], del:['Delete'], ins:['Insert'], home:['Home'], end:['End'],
+  pgup:['Page Up'], pgdn:['Page Down'], prt:['Print Screen'], up:['Arrow Up'], down:['Arrow Down'], left:['Arrow Left'], right:['Arrow Right'],
 };
 
 /* ================= Розкладка клавіатури ================= */
@@ -559,7 +569,7 @@ const STICKERS = [
   { id:'bank',   ico:'💰', name:'Повна скарбничка',   how:'Зібрати в скарбничку 600 балів',                                        count:p=>p.total, need:600 },
 ];
 const stickerProgress = st=>st.count && !store.stickers[st.id] ? Math.min(st.count(store) || 0, st.need) : 0;
-const STORE_KEY = BOOST ? 'key-places-kids-boost-v1' : 'key-places-kids-v1';
+const STORE_KEY = BOOST ? 'keyboard-residents-kids-boost-v1' : 'keyboard-residents-kids-v1';
 
 /* ================= Збереження ================= */
 // Гравці на цьому пристрої: { current, players:{ ім'я: профіль } }. У кожного свої рекорди, скарбничка, тема й наліпки.
@@ -583,7 +593,7 @@ function loadPlayer(name){
 /* ================= Звук ================= */
 // Звук увімкнено за замовчуванням. Учням перемикача не показуємо: вчитель вимикає звук адресою ?zvuk=tykho
 // (вмикає назад ?zvuk=klas) або Ctrl+Alt+Z — як у «Клавіатурних перегонах». Режим запам'ятовується на цьому пристрої
-const SOUND_KEY = 'key-places-kids-sound';
+const SOUND_KEY = 'keyboard-residents-kids-sound';
 let soundOn = true;
 try{ soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; }catch(e){}
 function setSound(on){
@@ -677,6 +687,29 @@ const VOICE = {
   magic:  d=>sparkle(d),
 };
 
+// Мешканець вигукує назву клавіші англійською голосом, який є в системі (у Windows — без інтернету).
+// Тембр залежить від мешканця: [висота, швидкість] за полем voice. Немає англійського голосу — лише його звук із VOICE
+let enVoice = null;
+function pickVoice(){
+  try{
+    const list = speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
+    enVoice = list.find(v=>v.localService && /US/i.test(v.lang)) || list.find(v=>v.localService) || list[0] || null;
+  }catch(e){}
+}
+if('speechSynthesis' in window){ pickVoice(); speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
+const TIMBRE = { squeak:[1.9, 1.15], chirp:[1.8, 1.15], buzz:[1.3, 1.1], croak:[.7, 1], meow:[1.5, 1], beep:[.4, .9], boo:[.6, .85],
+                 slow:[.8, .6], sneeze:[1.4, 1.1], roar:[.2, .85], bloop:[1.2, 1], magic:[1.6, .95] };
+function shout(text, voice){
+  if(!soundOn || !enVoice) return;
+  try{
+    speechSynthesis.cancel();   // попередній ще не договорив — нехай поступиться новому
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = enVoice; u.lang = enVoice.lang;
+    [u.pitch, u.rate] = TIMBRE[voice] || [1, 1];
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
 /* ================= Допоміжне ================= */
 const $ = id=>document.getElementById(id);
 const fmtTime = s=>`${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -769,11 +802,11 @@ function keyboardHTML({ full = true, empty = [], mini = false } = {}){
 }
 
 /* ================= Мешканці клавіатури ================= */
-// Під кожною порожньою клавішею хтось жив. Коли клавіша стає на місце, мешканець вистрибує з-під неї, щось каже й тікає.
-// say — що каже; voice — голос (VOICE); rare — рідкісний гість: світиться, з'являється з імовірністю RARE.
+// Під кожною порожньою клавішею хтось жив. Коли клавіша стає на місце, мешканець вистрибує з-під неї,
+// вигукує щось своє, потім називає клавішу англійською (EN) і тікає.
+// say — що вигукує спершу; voice — голос (VOICE); rare — рідкісний гість: світиться, з'являється з імовірністю RARE.
 // Малюнки — SVG 64×64, ноги внизу
 const RARE = .025;
-const SAY_ANY = ['Ой!', 'Моє місце!', 'Та йду вже, йду!', 'Хоп!', 'Звільняю!', 'Ого, клавіша!', 'Бувайте!'];   // іноді замість своєї фрази
 const BUDDIES = [
   { id:'mouse',    name:'Мишка',       say:'Пі-пі! Я ж тут жила!',        voice:'squeak' },
   { id:'bug',      name:'Жучок',       say:'Жжж! Переїжджаю!',            voice:'buzz' },
@@ -968,7 +1001,7 @@ $('themePicks').addEventListener('click', e=>{
 // Альбом мешканців: кого вже бачив — кольоровий, решта — тінь зі знаком питання
 function renderBuddies(){
   const met = BUDDIES.filter(b=>store.met[b.id]).length;
-  $('budCount').textContent = `${met} з ${BUDDIES.length} · кожна клавіша на місці виганяє когось із-під себе`;
+  $('budCount').textContent = `${met} з ${BUDDIES.length}`;
   $('buds').innerHTML = BUDDIES.map(b=>{
     const n = store.met[b.id] || 0;
     return `<span class="bud${n ? '' : ' no'}${b.rare ? ' rare' : ''}" data-bud="${b.id}">${buddySVG(b.id)}<span>${n ? b.name : b.rare ? '✨ ?' : '?'}</span>${n ? `<small>×${n}</small>` : ''}</span>`;
@@ -1305,13 +1338,21 @@ function nextBuddy(){
   }
   return G.lastBuddy = G.bag.shift();
 }
-// З-під клавіші вистрибує мешканець: з'являється, озирається, каже щось і зістрибує вбік з клавіатури.
+// З-під клавіші вистрибує мешканець: з'являється, вигукує своє (SAY_MS), називає клавішу (NAME_MS) і зістрибує вбік з клавіатури.
 // З-під Пробілу — ціла компанія з трьох
 function jumpOut(slot, k){
   const n = k.kind === 'space' ? 3 : 1, g = G;
-  for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
+  for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, k, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
 }
-function oneBuddy(slot, shiftU, talk){
+const SAY_MS = 1000, NAME_MS = 1000;   // скільки видно фразу мешканця й назву клавіші
+// Хмарка біля краю екрана зсувається всередину, а її хвостик і далі показує на мешканця
+function keepInside(sb){
+  sb.style.setProperty('--sh', '0px');
+  const br = sb.getBoundingClientRect(), edge = document.documentElement.clientWidth - 8;
+  const sh = br.left < 8 ? 8 - br.left : br.right > edge ? edge - br.right : 0;
+  sb.style.setProperty('--sh', sh + 'px');
+}
+function oneBuddy(slot, k, shiftU, talk){
   const b = nextBuddy();
   const first = !store.met[b.id];
   store.met[b.id] = (store.met[b.id] || 0) + 1;   // зберігаємо одразу: знайомство лишається, навіть якщо вийти посеред гри
@@ -1326,31 +1367,38 @@ function oneBuddy(slot, shiftU, talk){
   const el = document.createElement('div');
   el.className = 'buddy' + (b.rare ? ' rare' : '');
   el.style.cssText = `--bs:${size}px; left:${cx - size / 2}px; top:${cy - size}px`;
-  const say = !b.rare && Math.random() < .35 ? SAY_ANY[Math.floor(Math.random() * SAY_ANY.length)] : b.say;
-  el.innerHTML = (talk ? `<div class="say">${esc(say)}</div>` : '') + buddySVG(b.id);
+  const [en, spoken = en] = EN[k.kind];
+  el.innerHTML = (talk ? `<div class="say"><span class="ph">${esc(b.say)}</span><span class="en">${esc(en)}!</span></div>` : '') + buddySVG(b.id);
   play.appendChild(el);
-  // Хмарка біля краю екрана зсувається всередину, а її хвостик і далі показує на мешканця
   const sb = el.querySelector('.say');
-  if(sb){
-    const br = sb.getBoundingClientRect(), edge = document.documentElement.clientWidth - 8;
-    const sh = br.left < 8 ? 8 - br.left : br.right > edge ? edge - br.right : 0;
-    sb.style.setProperty('--sh', sh + 'px');
-  }
+  if(sb) keepInside(sb);
   const T =(x, y, rot = 0, sx = 1, sy = 1)=>`translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
   const anim = el.animate([
     { transform:T(0, size * .5, 0, .2, .2), opacity:0 },
-    { transform:T(0, -size * .35, 0, 1.08, .92), opacity:1, offset:.12 },
-    { transform:T(0, 0), offset:.2 },
-    { transform:T(0, 0, -7 * dir), offset:.36 },
-    { transform:T(0, 0, 7 * dir), offset:.5 },
-    { transform:T(0, 2, 0, 1.1, .85), offset:.58 },
-    { transform:T(dx * .55, -up, 18 * dir), offset:.75 },
+    { transform:T(0, -size * .35, 0, 1.08, .92), opacity:1, offset:.08 },
+    { transform:T(0, 0), offset:.13 },
+    { transform:T(0, 0, -7 * dir), offset:.25 },
+    { transform:T(0, 0, 7 * dir), offset:.37 },
+    { transform:T(0, -size * .12, 0, 1.05, .95), offset:.45 },   // підскакує, коли називає клавішу
+    { transform:T(0, 0, -4 * dir), offset:.55 },
+    { transform:T(0, 0), offset:.68 },
+    { transform:T(0, 2, 0, 1.1, .85), offset:.74 },
+    { transform:T(dx * .55, -up, 18 * dir), offset:.86 },
     { transform:T(dx, 150, 55 * dir), opacity:0 },
-  ], { duration:2100, easing:'ease-in-out', fill:'forwards' });
+  ], { duration:2900, easing:'ease-in-out', fill:'forwards' });
   anim.onfinish = ()=>el.remove();
-  el.querySelector('.say')?.animate([{ opacity:0 }, { opacity:1, offset:.12 }, { opacity:1, offset:.8 }, { opacity:0 }], { duration:1300, delay:200, fill:'forwards' });
+  sb?.animate([{ opacity:0 }, { opacity:1, offset:.08 }, { opacity:1, offset:.92 }, { opacity:0 }], { duration:SAY_MS + NAME_MS + 150, delay:220, fill:'forwards' });
   SFX.jump();
-  VOICE[b.voice](.25);
+  VOICE[b.voice](.22);   // спершу — його власний вигук
+  if(talk){
+    const g = G;
+    G.timers.push(setTimeout(()=>{
+      if(G !== g) return;
+      sb.classList.add('named');   // потім — назва клавіші
+      keepInside(sb);
+      shout(spoken + '!', b.voice);
+    }, 220 + SAY_MS));
+  }
   if(b.rare) sparkle(.5);
 }
 
@@ -1387,6 +1435,7 @@ function resume(){
 function stopGame(){
   if(!G) return;
   if(D){ D.ghost.remove(); endDrag(); }
+  try{ speechSynthesis.cancel(); }catch(e){}
   clearInterval(G.tick);
   G.timers.forEach(clearTimeout);
   G.phase = 'stopped';

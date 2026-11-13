@@ -3,13 +3,16 @@
   <rect width="512" height="512" rx="112" fill="url(#b)"/>
   <!-- порожнє місце для клавіші -->
   <rect x="62" y="318" width="170" height="122" rx="22" fill="#3B2C9E" stroke="#fff" stroke-width="7" stroke-dasharray="20 14" opacity=".85"/>
+  <!-- мишка визирає з порожнього місця: нижче краю місця її не видно -->
+  <clipPath id="hole"><rect x="0" y="0" width="512" height="432"/></clipPath>
+  <g clip-path="url(#hole)"><g transform="translate(64 244) scale(2.6)"><path d="M48 52q14 2 12-10" fill="none" stroke="#9AA0B4" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="23" r="10" fill="#C9CDDA" stroke="#1B1B3A" stroke-width="2.5" stroke-linejoin="round"/><circle cx="17" cy="23" r="5.5" fill="#FFB3C6"/><circle cx="47" cy="23" r="10" fill="#C9CDDA" stroke="#1B1B3A" stroke-width="2.5" stroke-linejoin="round"/><circle cx="47" cy="23" r="5.5" fill="#FFB3C6"/><ellipse cx="32" cy="43" rx="20" ry="17" fill="#C9CDDA" stroke="#1B1B3A" stroke-width="2.5" stroke-linejoin="round"/><circle cx="25" cy="38" r="4" fill="#fff" stroke="#1B1B3A" stroke-width="2"/><circle cx="25.5" cy="38.6" r="2.2" fill="#1B1B3A"/><circle cx="26.3" cy="37.5" r="0.8" fill="#fff"/><circle cx="39" cy="38" r="4" fill="#fff" stroke="#1B1B3A" stroke-width="2"/><circle cx="39.5" cy="38.6" r="2.2" fill="#1B1B3A"/><circle cx="40.3" cy="37.5" r="0.8" fill="#fff"/><circle cx="32" cy="45" r="3" fill="#FF6B8B" stroke="#1B1B3A" stroke-width="1.5"/><path d="M22 46h-9M22 49l-8 3M42 46h9M42 49l8 3" fill="none" stroke="#1B1B3A" stroke-width="1.5" stroke-linecap="round"/><path d="M29 49q3 2.7 6 0" fill="none" stroke="#1B1B3A" stroke-width="2.2" stroke-linecap="round"/></g></g>
   <!-- Enter-«гачок» -->
   <path d="M214 66h214q22 0 22 22v304q0 22-22 22H300q-22 0-22-22V214q0-22-22-22h-42q-22 0-22-22V88q0-22 22-22z" fill="#C3C6D6"/>
   <path d="M228 74h186q20 0 20 20v272q0 20-20 20H312q-20 0-20-20V196q0-20-20-20h-44q-20 0-20-20V94q0-20 20-20z" fill="#fff"/>
   <path d="M392 122v52q0 14-14 14H286" fill="none" stroke="#1B1B3A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M308 162l-26 26 26 26" fill="none" stroke="#1B1B3A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
   <!-- клавіша, що летить на місце -->
-  <g transform="rotate(-10 140 230)">
+  <g transform="translate(0 -46) rotate(-10 140 230)">
     <rect x="70" y="190" width="150" height="96" rx="20" fill="#FFB45E"/>
     <rect x="82" y="196" width="126" height="74" rx="16" fill="#FFE27A"/>
     <text x="145" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="36" fill="#5A3E00">Ctrl</text>
