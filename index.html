@@ -1389,12 +1389,10 @@ function nextBuddy(){
   }
   return G.lastBuddy = G.bag.shift();
 }
-// З-під клавіші вистрибує мешканець: з'являється, вигукує своє (sayMs), називає клавішу (nameMs) і зістрибує вбік з клавіатури.
-// З-під Пробілу — ціла компанія з трьох
+// З-під клавіші вистрибує мешканець: з'являється, вигукує своє (sayMs), називає клавішу (nameMs) і зістрибує вбік з клавіатури
 function jumpOut(slot, k){
-  const n = k.kind === 'space' ? 3 : 1, g = G;
-  G.spawning = n;
-  for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, k, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
+  G.spawning = 1;
+  oneBuddy(slot, k, 0, true);
 }
 // Скільки видно фразу мешканця й назву клавіші — з розрахунку на учня, що читає близько 53 слів за хвилину (2–3 клас):
 // READ_BASE на те, щоб помітити хмарку, і READ_WORD на кожне слово. Назву ще й чути, тож на неї менше
@@ -1446,9 +1444,9 @@ function oneBuddy(slot, k, shiftU, talk){
     { transform:T(0, 0), offset:at(t1 + 500) },
     { transform:T(0, 0), offset:at(t2) },
     { transform:T(0, 2, 0, 1.1, .85), offset:at(t2 + 180) },
-    { transform:T(dx * .55, -up, 18 * dir), offset:at(t2 + 450) },
+    { transform:T(dx * .55, -up, 18 * dir), opacity:1, offset:at(t2 + 450) },   // до цього — повністю видимий, тьмяніє лише в падінні
     { transform:T(dx, 150, 55 * dir), opacity:0 },
-  ], { duration:dur, easing:'ease-in-out', fill:'forwards' });
+  ].map(f=>({ easing:'ease-in-out', ...f })), { duration:dur, fill:'forwards' });   // плавно кожен крок, а не весь виступ: інакше кроки зсуваються відносно хмарки
   anim.onfinish = ()=>el.remove();
   G.spawning--;
   G.busyUntil = Math.max(G.busyUntil, performance.now() + dur);
