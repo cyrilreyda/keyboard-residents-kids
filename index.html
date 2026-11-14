@@ -147,6 +147,9 @@
   .tray .k{position:relative; left:auto; top:auto; flex-shrink:0; cursor:grab; touch-action:none; animation:pop-in .35s ease both;}
   .tray .k:hover{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(27,27,58,.2));}
   .tray .k.lifted{visibility:hidden;}
+  /* Мешканець ще говорить — клавіші в лотку тьмяні й не беруться */
+  .tray.wait .k{opacity:.4; cursor:default; filter:grayscale(.6); transition:opacity .2s, filter .2s;}
+  .tray.wait .k:hover{filter:grayscale(.6);}
   .tray .k.nudge{animation:shake .45s ease;}
   @keyframes pop-in{from{opacity:0; transform:translateY(-14px) scale(.85);}}
   .tray-left{font-size:13px; font-weight:700; color:var(--ink-soft); text-align:center;}
@@ -1159,12 +1162,13 @@ function start(levelId){
   // Черга клавіш. На «Легко» спершу Пробіл і Enter — їх найлегше впізнати за формою
   let queue = shuffle([...L.keys]);
   if(levelId === 'easy') queue = [...shuffle(['space', 'enter']), ...queue.filter(id=>id !== 'space' && id !== 'enter')];
-  G = { id:levelId, L, queue, tray:[], pending:0, total:L.keys.length, placed:0, firstTry:0, errors:0, hints:0,
+  G = { id:levelId, L, queue, tray:[], pending:0, total:L.keys.length, placed:0, firstTry:0, errors:0, hints:0, busy:false, busyUntil:0, spawning:0,
         confused:{}, pressed:{}, firstOf:{}, bag:[], newMet:[], rare:0, score:0, t:0, last:performance.now(), paused:false, phase:'play', timers:[] };
   applyTheme($('game'));
   L.keys.forEach(id=>clip(KEY[id].kind));   // записи назв цього рівня завантажуються заздалегідь
   $('board').innerHTML = keyboardHTML({ full:L.full, empty:L.keys });
   $('trayKeys').innerHTML = '';
+  $('tray').classList.remove('wait');
   $('score').textContent = '0';
   $('time').textContent = '0:00';
   $('timeChip').classList.remove('over-par');
@@ -1180,7 +1184,7 @@ function start(levelId){
 function tick(){
   if(!G || G.phase !== 'play') return;
   const now = performance.now();
-  if(!G.paused) G.t += now - G.last;
+  if(!G.paused && !G.busy) G.t += now - G.last;   // поки мешканець говорить, час гравця не йде
   G.last = now;
   $('time').textContent = fmtTime(G.t / 1000);
   $('timeChip').classList.toggle('over-par', G.t / 1000 > G.L.par);
@@ -1230,7 +1234,7 @@ function setInfo(ico, html, cls = ''){
 
 /* ---------- Перетягування ---------- */
 function grab(e, item){
-  if(!G || G.paused || G.phase !== 'play') return;
+  if(!G || G.paused || G.phase !== 'play' || G.busy) return;   // мешканець ще не договорив
   if(e.pointerType === 'mouse' && e.button !== 0) return;
   if(D) giveBack(true);   // попереднє перетягування зависло — повертаємо ту клавішу й беремо нову
   e.preventDefault();
@@ -1342,7 +1346,12 @@ function place(item, slot){
   SFX.place();
   setInfo('✅', `<b>${s.name}</b> — ${s.what}.`, 'good');
   updateProgress();
-  if(G.placed === G.total){ G.phase = 'end'; G.timers.push(setTimeout(finish, 450)); return; }
+  // Наступну клавішу можна взяти, коли мешканець договорить і зістрибне (unbusy); остання клавіша — тоді ж результат
+  tick();
+  G.busy = true;
+  G.busyUntil = 0;
+  $('tray').classList.add('wait');
+  if(G.placed === G.total){ G.phase = 'end'; return; }
   refill();
 }
 
@@ -1384,6 +1393,7 @@ function nextBuddy(){
 // З-під Пробілу — ціла компанія з трьох
 function jumpOut(slot, k){
   const n = k.kind === 'space' ? 3 : 1, g = G;
+  G.spawning = n;
   for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, k, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
 }
 // Скільки видно фразу мешканця й назву клавіші — з розрахунку на учня, що читає близько 53 слів за хвилину (2–3 клас):
@@ -1440,6 +1450,10 @@ function oneBuddy(slot, k, shiftU, talk){
     { transform:T(dx, 150, 55 * dir), opacity:0 },
   ], { duration:dur, easing:'ease-in-out', fill:'forwards' });
   anim.onfinish = ()=>el.remove();
+  G.spawning--;
+  G.busyUntil = Math.max(G.busyUntil, performance.now() + dur);
+  const g2 = G;
+  G.timers.push(setTimeout(()=>{ if(G === g2) unbusy(); }, dur + 30));
   const sbDur = say + name;
   sb?.animate([{ opacity:0 }, { opacity:1, offset:150 / sbDur }, { opacity:1, offset:1 - 150 / sbDur }, { opacity:0 }], { duration:sbDur, delay:220, fill:'forwards' });
   SFX.jump();
@@ -1454,6 +1468,17 @@ function oneBuddy(slot, k, shiftU, talk){
     }, t1));
   }
   if(b.rare) sparkle(.5);
+}
+
+// Мешканці договорили й зістрибнули, запис назви дограв — лоток знову працює (або, якщо клавіатуру зібрано, — результат)
+function unbusy(){
+  if(!G || !G.busy || G.spawning > 0) return;
+  const g = G, wait = G.busyUntil - performance.now();
+  if(wait > 0 || (playing && !playing.paused && !playing.ended && -wait < 3000)){ G.timers.push(setTimeout(()=>{ if(G === g) unbusy(); }, Math.max(wait, 120))); return; }
+  G.busy = false;
+  G.last = performance.now();
+  $('tray').classList.remove('wait');
+  if(G.placed === G.total) finish();
 }
 
 function popAt(el, text, cls = ''){
