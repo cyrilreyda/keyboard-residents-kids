@@ -105,7 +105,8 @@
   .led{position:absolute; right:12%; top:13%; width:calc(var(--u) * .11); height:calc(var(--u) * .11); border-radius:50%; background:rgba(0,0,0,.18);}
   .kb.caps .led{background:#3DDC84; box-shadow:0 0 6px #3DDC84;}
   /* Порожнє місце: над ним несуть клавішу — світлішає; підказка — блимає жовтим; не та клавіша — червоне */
-  .k.slot.over .hole{fill:var(--hole-over, rgba(255,255,255,.55)); stroke-dasharray:none; stroke-width:5;}
+  /* aim, а не over: .over — затемнення паузи (inset:0), воно перекинуло б місце в кут клавіатури */
+  .k.slot.aim .hole{fill:var(--hole-over, rgba(255,255,255,.55)); stroke-dasharray:none; stroke-width:5;}
   .k.slot.hint .hole{animation:hint-blink .7s ease-in-out infinite alternate;}
   @keyframes hint-blink{from{fill:var(--hole);} to{fill:#FFD84D;}}
   .k.bad{animation:shake .4s ease;}
@@ -1263,8 +1264,8 @@ function moveGhost(x, y){
   }).filter(s=>s.d <= NEAR_U * U || s.cover >= NEAR_COVER).sort((a, b)=>a.d - b.d || b.cover - a.cover)[0];
   const over = near?.el || slots.find(el=>inside(el, cx, cy)) || slots.find(el=>inside(el, x, y)) || null;
   if(over !== D.over){
-    D.over?.classList.remove('over');
-    over?.classList.add('over');
+    D.over?.classList.remove('aim');
+    over?.classList.add('aim');
     D.over = over;
   }
 }
@@ -1278,7 +1279,7 @@ window.addEventListener('pointerup', e=>{ if(D && e.pointerId === D.id) drop(); 
 window.addEventListener('pointercancel', e=>{ if(D && e.pointerId === D.id) giveBack(); });
 
 function endDrag(){
-  D.over?.classList.remove('over');
+  D.over?.classList.remove('aim');
   document.body.classList.remove('dragging');
   const d = D;
   D = null;
