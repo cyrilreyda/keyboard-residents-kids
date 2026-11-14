@@ -434,19 +434,20 @@ const BOOST = boostSaved || new URLSearchParams(location.search).has('boost');
 
 // Які клавіші ставить учень на кожному рівні (решта службових уже на місцях)
 const KEYS_EASY = ['space', 'enter', 'bksp', 'shiftL', 'shiftR', 'tab', 'caps', 'ctrlL', 'ctrlR'];
-const KEYS_MID  = [...KEYS_EASY, 'altL', 'altR', 'winL', 'esc', 'up', 'down', 'left', 'right'];
-const KEYS_HARD = [...KEYS_MID, 'winR', 'menu', 'del', 'ins', 'home', 'end', 'pgup', 'pgdn', 'prt'];
+// Windows і клавіша меню на різних клавіатурах стоять по-різному, тож їх не ставлять: вони вже на місцях
+const KEYS_MID  = [...KEYS_EASY, 'altL', 'altR', 'esc', 'up', 'down', 'left', 'right'];
+const KEYS_HARD = [...KEYS_MID, 'del', 'ins', 'home', 'end', 'pgup', 'pgdn', 'prt'];
 // full — уся клавіатура з F1–F12 і блоком стрілок; інакше лише основна частина.
 // tray — скільки клавіш водночас у лотку; par — норма часу, с (друга зірка); err — скільки помилок можна (третя зірка);
 // hint — після скількох помилок з однією клавішею її місце починає блимати
 const LEVELS = BOOST ? {
   easy: { name:'Легко',    ico:'🟢', info:'основні клавіші',     keys:KEYS_EASY, full:false, tray:3, par:40,  err:1, hint:3 },
-  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Win, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:4, par:75,  err:2, hint:3 },
-  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:4, par:120, err:3, hint:3 },
+  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:4, par:70,  err:2, hint:3 },
+  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:4, par:105, err:3, hint:3 },
 } : {
   easy: { name:'Легко',    ico:'🟢', info:'основні клавіші',     keys:KEYS_EASY, full:false, tray:2, par:60,  err:2, hint:2 },
-  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Win, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:3, par:110, err:3, hint:2 },
-  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:3, par:170, err:4, hint:2 },
+  mid:  { name:'Середньо', ico:'🟡', info:'+ Alt, Esc, стрілки', keys:KEYS_MID,  full:true,  tray:3, par:105, err:3, hint:2 },
+  hard: { name:'Важко',    ico:'🔴', info:'уся клавіатура',      keys:KEYS_HARD, full:true,  tray:3, par:150, err:4, hint:2 },
 };
 const PTS_FIRST = 2, PTS_LATER = 1;          // за клавішу з першої спроби й не з першої
 const BONUS_CLEAN = 5, BONUS_PAR = 3;        // без жодної помилки; вклався в норму часу
@@ -1130,9 +1131,10 @@ let D = null;           // клавіша, яку зараз несуть
 let lastLevel = 'easy';
 let U = 48;             // ширина звичайної клавіші, px; перераховується при зміні вікна
 
-// Чи пасує клавіша з лотка на місце: та сама службова клавіша й та сама форма.
-// Тож обидва Ctrl чи обидва Alt підходять на будь-яке з двох місць, а короткий Shift на місце довгого — ні
-const fits = (id, slotId)=>{ const a = KEY[id], b = KEY[slotId]; return a.kind === b.kind && a.w === b.w && a.h === b.h; };
+// Чи пасує клавіша з лотка на місце: та сама службова клавіша.
+// Парні клавіші (Shift, Ctrl, Alt) стають на будь-яке місце своєї пари, навіть коли ліва й права різної довжини:
+// на клавіатурі клавіша набуває форми свого місця
+const fits = (id, slotId)=>KEY[id].kind === KEY[slotId].kind;
 const slotEls = ()=>[...document.querySelectorAll('#board .k.slot')];
 // Своє місце приймає клавішу, якщо її центр чи вказівник не далі за NEAR_U ширини звичайної клавіші від краю місця
 // або клавіша накриває щонайменше NEAR_COVER площі місця — навіть коли під центром чуже порожнє місце
@@ -1384,9 +1386,9 @@ function jumpOut(slot, k){
   const n = k.kind === 'space' ? 3 : 1, g = G;
   for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, k, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
 }
-// Скільки видно фразу мешканця й назву клавіші — з розрахунку на учня 2 класу, що читає близько 40 слів за хвилину:
+// Скільки видно фразу мешканця й назву клавіші — з розрахунку на учня, що читає близько 53 слів за хвилину (2–3 клас):
 // READ_BASE на те, щоб помітити хмарку, і READ_WORD на кожне слово. Назву ще й чути, тож на неї менше
-const READ_BASE = 800, READ_WORD = 1500, NAME_BASE = 1400, NAME_WORD = 600;
+const READ_BASE = 600, READ_WORD = 1125, NAME_BASE = 1050, NAME_WORD = 450;
 const words = s=>s.trim().split(/\s+/).length;
 const sayMs = b=>READ_BASE + READ_WORD * words(b.say);
 const nameMs = en=>NAME_BASE + NAME_WORD * words(en);
