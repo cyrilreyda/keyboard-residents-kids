@@ -1133,6 +1133,9 @@ let U = 48;             // ширина звичайної клавіші, px; �
 // Тож обидва Ctrl чи обидва Alt підходять на будь-яке з двох місць, а короткий Shift на місце довгого — ні
 const fits = (id, slotId)=>{ const a = KEY[id], b = KEY[slotId]; return a.kind === b.kind && a.w === b.w && a.h === b.h; };
 const slotEls = ()=>[...document.querySelectorAll('#board .k.slot')];
+// Своє місце приймає клавішу, якщо її центр чи вказівник не далі за NEAR_U ширини звичайної клавіші від краю місця
+// або клавіша накриває щонайменше NEAR_COVER площі місця — навіть коли під центром чуже порожнє місце
+const NEAR_U = .75, NEAR_COVER = .25;
 
 function measure(){
   if(!G) return;
@@ -1224,9 +1227,11 @@ function setInfo(ico, html, cls = ''){
 
 /* ---------- Перетягування ---------- */
 function grab(e, item){
-  if(!G || G.paused || G.phase !== 'play' || D) return;
+  if(!G || G.paused || G.phase !== 'play') return;
   if(e.pointerType === 'mouse' && e.button !== 0) return;
+  if(D) giveBack(true);   // попереднє перетягування зависло — повертаємо ту клавішу й беремо нову
   e.preventDefault();
+  try{ item.el.setPointerCapture(e.pointerId); }catch(err){}   // відпускання за межами вікна теж дійде до гри
   const k = KEY[item.id], r = item.el.getBoundingClientRect();
   const sc = r.width / (k.w * U);   // у лотку клавіша могла бути зменшена
   const ghost = document.createElement('div');
@@ -1245,18 +1250,30 @@ function moveGhost(x, y){
   D.ghost.style.left = (x - D.ox) + 'px';
   D.ghost.style.top = (y - D.oy) + 'px';
   if(Math.hypot(x - D.x0, y - D.y0) > 6) D.moved = true;
-  // Ціль — порожнє місце під центром клавіші, яку несуть, а якщо там нічого — під вказівником
-  const cx = x - D.ox + k.w * U / 2, cy = y - D.oy + k.h * U / 2;
+  // Ціль. Діти ще вчаться точно вести мишу, тож своє місце «притягує» клавішу, відпущену поруч (NEAR_U, NEAR_COVER).
+  // Інакше — порожнє місце під центром клавіші, яку несуть, а якщо там нічого — під вказівником
+  const gl = x - D.ox, gt = y - D.oy, gw = k.w * U, gh = k.h * U, cx = gl + gw / 2, cy = gt + gh / 2;
   const inside = (el, px, py)=>{ const r = el.getBoundingClientRect(); return px >= r.left && px <= r.right && py >= r.top && py <= r.bottom; };
+  const gap = (r, px, py)=>Math.hypot(Math.max(r.left - px, 0, px - r.right), Math.max(r.top - py, 0, py - r.bottom));
   const slots = slotEls();
-  const over = slots.find(el=>inside(el, cx, cy)) || slots.find(el=>inside(el, x, y)) || null;
+  const near = slots.filter(el=>fits(D.item.id, el.dataset.id)).map(el=>{
+    const r = el.getBoundingClientRect();
+    const cover = Math.max(0, Math.min(r.right, gl + gw) - Math.max(r.left, gl)) * Math.max(0, Math.min(r.bottom, gt + gh) - Math.max(r.top, gt)) / (r.width * r.height);
+    return { el, d:Math.min(gap(r, cx, cy), gap(r, x, y)), cover };
+  }).filter(s=>s.d <= NEAR_U * U || s.cover >= NEAR_COVER).sort((a, b)=>a.d - b.d || b.cover - a.cover)[0];
+  const over = near?.el || slots.find(el=>inside(el, cx, cy)) || slots.find(el=>inside(el, x, y)) || null;
   if(over !== D.over){
     D.over?.classList.remove('over');
     over?.classList.add('over');
     D.over = over;
   }
 }
-window.addEventListener('pointermove', e=>{ if(D && e.pointerId === D.id) moveGhost(e.clientX, e.clientY); });
+window.addEventListener('pointermove', e=>{
+  if(!D || e.pointerId !== D.id) return;
+  if(e.pointerType === 'mouse' && !(e.buttons & 1)){ drop(); return; }   // кнопку відпустили, а pointerup загубився
+  moveGhost(e.clientX, e.clientY);
+});
+window.addEventListener('lostpointercapture', e=>{ if(D && e.pointerId === D.id) giveBack(); });
 window.addEventListener('pointerup', e=>{ if(D && e.pointerId === D.id) drop(); });
 window.addEventListener('pointercancel', e=>{ if(D && e.pointerId === D.id) giveBack(); });
 
@@ -1360,13 +1377,18 @@ function nextBuddy(){
   }
   return G.lastBuddy = G.bag.shift();
 }
-// З-під клавіші вистрибує мешканець: з'являється, вигукує своє (SAY_MS), називає клавішу (NAME_MS) і зістрибує вбік з клавіатури.
+// З-під клавіші вистрибує мешканець: з'являється, вигукує своє (sayMs), називає клавішу (nameMs) і зістрибує вбік з клавіатури.
 // З-під Пробілу — ціла компанія з трьох
 function jumpOut(slot, k){
   const n = k.kind === 'space' ? 3 : 1, g = G;
   for(let i = 0; i < n; i++) G.timers.push(setTimeout(()=>{ if(G === g) oneBuddy(slot, k, (i - (n - 1) / 2) * 1.9, i === 0); }, i * 140));
 }
-const SAY_MS = 1000, NAME_MS = 1000;   // скільки видно фразу мешканця й назву клавіші
+// Скільки видно фразу мешканця й назву клавіші — з розрахунку на учня 2 класу, що читає близько 40 слів за хвилину:
+// READ_BASE на те, щоб помітити хмарку, і READ_WORD на кожне слово. Назву ще й чути, тож на неї менше
+const READ_BASE = 800, READ_WORD = 1500, NAME_BASE = 1400, NAME_WORD = 600;
+const words = s=>s.trim().split(/\s+/).length;
+const sayMs = b=>READ_BASE + READ_WORD * words(b.say);
+const nameMs = en=>NAME_BASE + NAME_WORD * words(en);
 // Хмарка біля краю екрана зсувається всередину, а її хвостик і далі показує на мешканця
 function keepInside(sb){
   sb.style.setProperty('--sh', '0px');
@@ -1394,22 +1416,29 @@ function oneBuddy(slot, k, shiftU, talk){
   play.appendChild(el);
   const sb = el.querySelector('.say');
   if(sb) keepInside(sb);
+  // Хронологія в мілісекундах: вистрибує, озирається, поки видно фразу (say), підскакує на назві клавіші (name), тікає.
+  // Хто мовчить (двоє з-під Пробілу), стоїть стільки ж, скільки той, що говорить
   const T =(x, y, rot = 0, sx = 1, sy = 1)=>`translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
+  const say = talk ? (G.talkSay = sayMs(b)) : G.talkSay || sayMs(b), name = nameMs(en), t1 = 220 + say, t2 = t1 + name, dur = t2 + 750;
+  const at = ms=>Math.min(1, ms / dur);
   const anim = el.animate([
     { transform:T(0, size * .5, 0, .2, .2), opacity:0 },
-    { transform:T(0, -size * .35, 0, 1.08, .92), opacity:1, offset:.08 },
-    { transform:T(0, 0), offset:.13 },
-    { transform:T(0, 0, -7 * dir), offset:.25 },
-    { transform:T(0, 0, 7 * dir), offset:.37 },
-    { transform:T(0, -size * .12, 0, 1.05, .95), offset:.45 },   // підскакує, коли називає клавішу
-    { transform:T(0, 0, -4 * dir), offset:.55 },
-    { transform:T(0, 0), offset:.68 },
-    { transform:T(0, 2, 0, 1.1, .85), offset:.74 },
-    { transform:T(dx * .55, -up, 18 * dir), offset:.86 },
+    { transform:T(0, -size * .35, 0, 1.08, .92), opacity:1, offset:at(230) },
+    { transform:T(0, 0), offset:at(380) },
+    { transform:T(0, 0, -7 * dir), offset:at(380 + (t1 - 380) * .3) },
+    { transform:T(0, 0, 7 * dir), offset:at(380 + (t1 - 380) * .6) },
+    { transform:T(0, 0), offset:at(t1 - 60) },
+    { transform:T(0, -size * .12, 0, 1.05, .95), offset:at(t1 + 100) },   // підскакує, коли називає клавішу
+    { transform:T(0, 0, -4 * dir), offset:at(t1 + 300) },
+    { transform:T(0, 0), offset:at(t1 + 500) },
+    { transform:T(0, 0), offset:at(t2) },
+    { transform:T(0, 2, 0, 1.1, .85), offset:at(t2 + 180) },
+    { transform:T(dx * .55, -up, 18 * dir), offset:at(t2 + 450) },
     { transform:T(dx, 150, 55 * dir), opacity:0 },
-  ], { duration:2900, easing:'ease-in-out', fill:'forwards' });
+  ], { duration:dur, easing:'ease-in-out', fill:'forwards' });
   anim.onfinish = ()=>el.remove();
-  sb?.animate([{ opacity:0 }, { opacity:1, offset:.08 }, { opacity:1, offset:.92 }, { opacity:0 }], { duration:SAY_MS + NAME_MS + 150, delay:220, fill:'forwards' });
+  const sbDur = say + name;
+  sb?.animate([{ opacity:0 }, { opacity:1, offset:150 / sbDur }, { opacity:1, offset:1 - 150 / sbDur }, { opacity:0 }], { duration:sbDur, delay:220, fill:'forwards' });
   SFX.jump();
   VOICE[b.voice](.22);   // спершу — його власний вигук
   if(talk){
@@ -1419,7 +1448,7 @@ function oneBuddy(slot, k, shiftU, talk){
       sb.classList.add('named');   // потім — назва клавіші
       keepInside(sb);
       shout(k.kind, b.voice);
-    }, 220 + SAY_MS));
+    }, t1));
   }
   if(b.rare) sparkle(.5);
 }
