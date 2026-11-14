@@ -687,8 +687,28 @@ const VOICE = {
   magic:  d=>sparkle(d),
 };
 
-// Мешканець вигукує назву клавіші англійською голосом, який є в системі (у Windows — без інтернету).
-// Тембр залежить від мешканця: [висота, швидкість] за полем voice. Немає англійського голосу — лише його звук із VOICE
+// Мешканець вигукує назву клавіші англійською: записи audio/<kind>.mp3 (дитячий голос en-US-AnaNeural, записано edge-tts).
+// Тембр залежить від мешканця (поле voice): запис грає швидше чи повільніше без збереження висоти —
+// мишка пищить тонко, монстрик басить. Працює однаково на всіх комп'ютерах і без інтернету
+const RATE = { squeak:1.3, chirp:1.25, buzz:1.1, croak:.85, meow:1.15, beep:.8, boo:.82, slow:.75, sneeze:1.15, roar:.72, bloop:1.05, magic:1.2 };
+const clips = {};
+let playing = null;
+const clip = kind=>{
+  if(!clips[kind]){ clips[kind] = new Audio(`audio/${kind}.mp3`); clips[kind].preload = 'auto'; }
+  return clips[kind];
+};
+function shout(kind, voice){
+  if(!soundOn) return;
+  try{
+    playing?.pause();   // попередній ще не договорив — нехай поступиться новому
+    const a = playing = clip(kind);
+    a.preservesPitch = a.webkitPreservesPitch = false;
+    a.playbackRate = RATE[voice] || 1;
+    a.currentTime = .15;   // у записі спершу 0,18 с тиші
+    a.play().catch(()=>speak(kind, voice));
+  }catch(e){ speak(kind, voice); }
+}
+// Запис не зіграв (файлу немає) — назву вимовляє англійський голос системи, якщо він є
 let enVoice = null;
 function pickVoice(){
   try{
@@ -699,11 +719,12 @@ function pickVoice(){
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
 const TIMBRE = { squeak:[1.9, 1.15], chirp:[1.8, 1.15], buzz:[1.3, 1.1], croak:[.7, 1], meow:[1.5, 1], beep:[.4, .9], boo:[.6, .85],
                  slow:[.8, .6], sneeze:[1.4, 1.1], roar:[.2, .85], bloop:[1.2, 1], magic:[1.6, .95] };
-function shout(text, voice){
+function speak(kind, voice){
   if(!soundOn || !enVoice) return;
   try{
-    speechSynthesis.cancel();   // попередній ще не договорив — нехай поступиться новому
-    const u = new SpeechSynthesisUtterance(text);
+    speechSynthesis.cancel();
+    const [en, spoken = en] = EN[kind];
+    const u = new SpeechSynthesisUtterance(spoken + '!');
     u.voice = enVoice; u.lang = enVoice.lang;
     [u.pitch, u.rate] = TIMBRE[voice] || [1, 1];
     speechSynthesis.speak(u);
@@ -1135,6 +1156,7 @@ function start(levelId){
   G = { id:levelId, L, queue, tray:[], pending:0, total:L.keys.length, placed:0, firstTry:0, errors:0, hints:0,
         confused:{}, pressed:{}, firstOf:{}, bag:[], newMet:[], rare:0, score:0, t:0, last:performance.now(), paused:false, phase:'play', timers:[] };
   applyTheme($('game'));
+  L.keys.forEach(id=>clip(KEY[id].kind));   // записи назв цього рівня завантажуються заздалегідь
   $('board').innerHTML = keyboardHTML({ full:L.full, empty:L.keys });
   $('trayKeys').innerHTML = '';
   $('score').textContent = '0';
@@ -1396,7 +1418,7 @@ function oneBuddy(slot, k, shiftU, talk){
       if(G !== g) return;
       sb.classList.add('named');   // потім — назва клавіші
       keepInside(sb);
-      shout(spoken + '!', b.voice);
+      shout(k.kind, b.voice);
     }, 220 + SAY_MS));
   }
   if(b.rare) sparkle(.5);
@@ -1435,7 +1457,7 @@ function resume(){
 function stopGame(){
   if(!G) return;
   if(D){ D.ghost.remove(); endDrag(); }
-  try{ speechSynthesis.cancel(); }catch(e){}
+  try{ playing?.pause(); speechSynthesis.cancel(); }catch(e){}
   clearInterval(G.tick);
   G.timers.forEach(clearTimeout);
   G.phase = 'stopped';

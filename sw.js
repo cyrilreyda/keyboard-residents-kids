@@ -1,9 +1,10 @@
 // Офлайн-режим гри. Онлайн сторінки завжди беруться з мережі (і оновлюють збережену копію),
 // без інтернету — зі збереженої копії. Параметри адреси (?boost, ?zvuk=…) на копію не впливають.
 // Після зміни списку FILES збільшити номер у CACHE, щоб браузери забрали нову копію.
-const CACHE = 'keyboard-residents-kids-v1';
+const CACHE = 'keyboard-residents-kids-v2';
 const FILES = ['./', './index.html', './guide/', './guide/index.html', './fonts/fonts.css',
-               './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+               './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
+               ...['esc','tab','caps','shift','ctrl','win','alt','space','menu','enter','bksp','del','ins','home','end','pgup','pgdn','prt','up','down','left','right'].map(k=>`./audio/${k}.mp3`)];   // назви клавіш
 const TIMEOUT = 5000;   // повільна мережа в класі — після 5 с беремо збережену копію
 
 self.addEventListener('install', e=>{
@@ -21,7 +22,7 @@ self.addEventListener('fetch', e=>{
   const fromCache = ()=>caches.match(req, { ignoreSearch:true })
     .then(r=>r || (req.mode === 'navigate' ? caches.match('./index.html') : Response.error()));
   const fromNet = fetch(req).then(res=>{
-    if(res.ok){ const copy = res.clone(); caches.open(CACHE).then(c=>c.put(req.url.split('?')[0], copy)); }
+    if(res.status === 200){ const copy = res.clone(); caches.open(CACHE).then(c=>c.put(req.url.split('?')[0], copy)); }
     return res;
   });
   const slow = new Promise((_, reject)=>setTimeout(()=>reject(new Error('timeout')), TIMEOUT));
