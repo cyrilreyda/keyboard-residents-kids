@@ -1457,7 +1457,14 @@ function jumpOut(slot, k){
 // READ_BASE на те, щоб помітити хмарку, і READ_WORD на кожне слово. Назву ще й чути, тож на неї менше
 const READ_BASE = 600, READ_WORD = 1125, NAME_BASE = 1050, NAME_WORD = 450;
 const words = s=>s.trim().split(/\s+/).length;
-const sayMs = b=>READ_BASE + READ_WORD * words(b.say);
+// Якщо відома швидкість друку (pace.all, зн/хв зі спільного акаунта), READ_WORD береться під учня: хто швидше друкує,
+// той і читає швидше. Читання, слів/хв = 40 + pace / 2: 27 зн/хв дає ті самі 53 слова/хв, що й без швидкості;
+// межі 40–120 слів/хв — не повільніше за 1 клас і не швидше, ніж встигне око дитини 4 класу
+const readWordMs = ()=>{
+  const pace = +ACC?.shared('pace').all;
+  return pace > 0 ? 60000 / Math.min(120, Math.max(40, 40 + pace / 2)) : READ_WORD;
+};
+const sayMs = b=>READ_BASE + readWordMs() * words(b.say);
 const nameMs = en=>NAME_BASE + NAME_WORD * words(en);
 // Хмарка біля краю екрана зсувається всередину, а її хвостик і далі показує на мешканця
 function keepInside(sb){
